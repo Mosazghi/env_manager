@@ -18,15 +18,12 @@ func NewProjectHandler(repo repository.ProjectRepository) *ProjectHandler {
 }
 
 func (h *ProjectHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-
-	projects, total, err := h.repo.FindAll(page, limit)
+	projects, err := h.repo.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": projects, "total": total, "page": page, "limit": limit})
+	c.JSON(http.StatusOK, gin.H{"data": projects})
 }
 
 func (h *ProjectHandler) GetByID(c *gin.Context) {
@@ -42,6 +39,21 @@ func (h *ProjectHandler) GetByID(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": project})
+}
+
+func (h *ProjectHandler) GetEnvVars(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	envVars, err := h.repo.FindEnvVarsByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "env vars not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": envVars})
 }
 
 func (h *ProjectHandler) Create(c *gin.Context) {

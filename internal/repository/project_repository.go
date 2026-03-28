@@ -7,8 +7,9 @@ import (
 )
 
 type ProjectRepository interface {
-	FindAll(page, limit int) ([]models.Project, int64, error)
+	FindAll() ([]models.Project, error)
 	FindByID(id uint) (*models.Project, error)
+	FindEnvVarsByID(id uint) ([]*models.EnvVar, error)
 	Create(project *models.Project) error
 	Update(project *models.Project) error
 	Delete(id uint) error
@@ -22,20 +23,23 @@ func NewProjectRepository(db *gorm.DB) ProjectRepository {
 	return &projectRepository{db}
 }
 
-func (r *projectRepository) FindAll(page, limit int) ([]models.Project, int64, error) {
+func (r *projectRepository) FindAll() ([]models.Project, error) {
 	var projects []models.Project
-	var total int64
 
-	offset := (page - 1) * limit
-	r.db.Model(&models.Project{}).Count(&total)
-	result := r.db.Offset(offset).Limit(limit).Find(&projects)
-	return projects, total, result.Error
+	result := r.db.Find(&projects)
+	return projects, result.Error
 }
 
 func (r *projectRepository) FindByID(id uint) (*models.Project, error) {
 	var project models.Project
 	result := r.db.First(&project, id)
 	return &project, result.Error
+}
+
+func (r *projectRepository) FindEnvVarsByID(id uint) ([]*models.EnvVar, error) {
+	var envVars []*models.EnvVar
+	result := r.db.Where("project_id = ?", id).Find(&envVars)
+	return envVars, result.Error
 }
 
 func (r *projectRepository) Create(project *models.Project) error {

@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 type EnvVar struct {
 	gorm.Model
 	ProjectID int     `json:"project_id" gorm:"not null;index"`
-	Project   Project `json:"project"    gorm:"foreignKey:ProjectID"`
+	Project   Project `json:"-"    gorm:"foreignKey:ProjectID"`
 	Key       string  `json:"key"`
 	Value     string  `json:"value"`
 }

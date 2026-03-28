@@ -25,6 +25,7 @@ func Setup(projectHandler *handler.ProjectHandler, envVarHandler *handler.EnvVar
 		{
 			projects.GET("", projectHandler.GetAll)
 			projects.GET("/:id", projectHandler.GetByID)
+			projects.GET("/:id/env-vars", projectHandler.GetEnvVars)
 			projects.POST("", projectHandler.Create)
 			projects.PUT("/:id", projectHandler.Update)
 			projects.DELETE("/:id", projectHandler.Delete)
