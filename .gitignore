@@ -5,3 +5,5 @@
 # Go build cache (optional)
 *.exe
 *.out
+data/
+tmp/
