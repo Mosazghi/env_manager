@@ -136,6 +136,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		// Remote vars
 		projectID, _ := rootCmd.Flags().GetString("project-id")
+		silentMode, _ := rootCmd.Flags().GetBool("silent-mode")
 		data, err := client.Get("/projects/" + projectID + "/env-vars")
 		if err != nil {
 			return err
@@ -186,7 +187,11 @@ var syncEnvVarsCmd = &cobra.Command{
 						update()
 					} else {
 						var confirmation string
-						fmt.Printf("%v's value changed: %v => %v. Update to remote (y/N)? ", key, remoteEnvVar.Value, val)
+						if !silentMode {
+							fmt.Printf("%v's value changed: %v => %v. Update to remote (y/N)? ", key, remoteEnvVar.Value, val)
+						} else {
+							fmt.Printf("%v's value changed: [len=%v] => [len=%v]. Update to remote (y/N)? ", key, len(remoteEnvVar.Value), len(val))
+						}
 						fmt.Scanln(&confirmation)
 
 						confirmation = strings.ToLower(confirmation)
@@ -203,7 +208,11 @@ var syncEnvVarsCmd = &cobra.Command{
 		for key, pair := range remoteEnvVars {
 			if _, exists := localEnvVars[key]; !exists {
 				var confirmation string
-				fmt.Printf("%v=%v (%v) doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)? ", key, pair.Value, pair.ID)
+				if !silentMode {
+					fmt.Printf("%v=%v (%v) doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)? ", key, pair.Value, pair.ID)
+				} else {
+					fmt.Printf("%v = [len=%v] (%v) doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)? ", key, len(pair.Value), pair.ID)
+				}
 				fmt.Scanln(&confirmation)
 
 				confirmation = strings.ToLower(confirmation)
