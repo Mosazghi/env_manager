@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"env-manager/internal/models"
-	"env-manager/internal/repository"
 	"net/http"
 	"strconv"
+
+	"env-manager/internal/models"
+	"env-manager/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,74 +21,75 @@ func NewProjectHandler(repo repository.ProjectRepository) *ProjectHandler {
 func (h *ProjectHandler) GetAll(c *gin.Context) {
 	projects, err := h.repo.FindAll()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": projects})
+	c.JSON(http.StatusOK, ToResponse(true, "Projects retrieved", projects))
 }
 
 func (h *ProjectHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	project, err := h.repo.FindByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, ToResponse(false, "project not found", nil))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": project})
+	c.JSON(http.StatusOK, ToResponse(true, "Project found", project))
 }
 
 func (h *ProjectHandler) GetEnvVars(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	envVars, err := h.repo.FindEnvVarsByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "env vars not found"})
+		c.JSON(http.StatusNotFound, ToResponse(false, "env vars not found", nil))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": envVars})
+	c.JSON(http.StatusOK, ToResponse(true, "Env vars found", envVars))
 }
 
 func (h *ProjectHandler) Create(c *gin.Context) {
 	var req models.CreateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ToResponse(false, err.Error(), nil))
 		return
 	}
 
 	project := &models.Project{Name: req.Name, Description: req.Description}
 
 	if err := h.repo.Create(project); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": project})
+
+	c.JSON(http.StatusCreated, ToResponse(true, "Project created", project))
 }
 
 func (h *ProjectHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	project, err := h.repo.FindByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+		c.JSON(http.StatusNotFound, ToResponse(false, "project not found", nil))
 		return
 	}
 
 	var req models.UpdateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ToResponse(false, err.Error(), nil))
 		return
 	}
 
@@ -99,22 +101,22 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.repo.Update(project); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": project})
+	c.JSON(http.StatusOK, ToResponse(true, "Project updated", project))
 }
 
 func (h *ProjectHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	if err := h.repo.Delete(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "project deleted"})
+	c.JSON(http.StatusOK, ToResponse(true, "project deleted", nil))
 }

@@ -10,7 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var token string
+var (
+	token     string
+	projectID string
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "envm",
@@ -37,7 +40,10 @@ func init() {
 		line := scanner.Text()
 		if strings.Contains(line, "ENVM_TOKEN") {
 			token = strings.Split(line, "=")[1]
-			break
+		}
+
+		if strings.Contains(line, "PROJET_ID") {
+			projectID = strings.Split(line, "=")[1]
 		}
 	}
 
@@ -46,4 +52,5 @@ func init() {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&token, "token", token, "API token (or set ENVM_TOKEN)")
+	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", projectID, "Default Project ID")
 }

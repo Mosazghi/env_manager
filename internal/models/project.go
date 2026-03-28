@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Project struct {
 	gorm.Model
-	Name        string `json:"name"`
+	Name        string `json:"name" gorm:"unique;not null"`
 	Description string `json:"description" gorm:"type:text"`
 }
 

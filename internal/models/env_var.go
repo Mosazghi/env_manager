@@ -17,6 +17,6 @@ type CreateEnvVarRequest struct {
 }
 
 type UpdateEnvVarRequest struct {
-	Key   string `json:"key" binding:"required"`
-	Value string `json:"value" binding:"required"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }

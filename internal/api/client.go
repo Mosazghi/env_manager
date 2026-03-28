@@ -49,3 +49,4 @@ func (c *Client) do(method, path string, body any) ([]byte, error) {
 func (c *Client) Get(path string) ([]byte, error)            { return c.do("GET", path, nil) }
 func (c *Client) Post(path string, body any) ([]byte, error) { return c.do("POST", path, body) }
 func (c *Client) Delete(path string) ([]byte, error)         { return c.do("DELETE", path, nil) }
+func (c *Client) Put(path string, body any) ([]byte, error)  { return c.do("PUT", path, body) }
