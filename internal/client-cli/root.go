@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	token     string
-	projectID string
+	token      string
+	projectID  string
+	silentMode bool
 )
 
 var rootCmd = &cobra.Command{
@@ -53,4 +54,5 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&token, "token", token, "API token (or set ENVM_TOKEN)")
 	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", projectID, "Default Project ID")
+	rootCmd.PersistentFlags().BoolVar(&silentMode, "silent-mode", false, "Silent Mode")
 }
