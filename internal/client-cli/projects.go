@@ -111,7 +111,7 @@ var syncEnvVarsCmd = &cobra.Command{
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 
-		filePath, err := cmd.Flags().GetString("file-path")
+		filePath, _ := cmd.Flags().GetString("file-path")
 		forceUpdate, err := cmd.Flags().GetBool("force-update")
 		if err != nil {
 			return err
@@ -119,7 +119,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		localEnvVars := make(map[string]string)
 
-		file, err := os.Open(filePath)
+		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			fmt.Printf("failed to open file: %s\n", err)
 			os.Exit(1)
