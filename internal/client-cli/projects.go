@@ -57,11 +57,11 @@ var createProjectCmd = &cobra.Command{
 		var body models.CreateProjectRequest
 		body.Name = args[0]
 		body.Description = args[1]
-		data, err := client.Post("/projects/", body)
+		_, err := client.Post("/projects/", body)
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(data))
+		fmt.Println("Project created")
 		return nil
 	},
 }
@@ -117,7 +117,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		file, err := os.Open(filePath)
 		if err != nil {
-			fmt.Printf("failed to open file: %s", err)
+			fmt.Printf("failed to open file: %s\n", err)
 			os.Exit(1)
 		}
 		defer file.Close()
@@ -164,13 +164,14 @@ var syncEnvVarsCmd = &cobra.Command{
 			if !exist {
 				pIDInt, err := strconv.Atoi(projectID)
 				if err != nil {
-					fmt.Printf("Project ID conversion failed")
+					fmt.Println("Project ID conversion failed")
 					os.Exit(1)
 				}
 				if _, err := client.Post("/env-vars", models.CreateEnvVarRequest{Key: key, Value: val, ProjectID: pIDInt}); err != nil {
-					fmt.Printf("failed to create env var: %s", err)
+					fmt.Printf("failed to create env var: %s\n", err)
 					os.Exit(1)
 				}
+				fmt.Println("Uploaded a new variable")
 			}
 
 			// If it exists but value is different, update it
@@ -178,7 +179,7 @@ var syncEnvVarsCmd = &cobra.Command{
 				if remoteEnvVar.Value != val {
 					update := func() {
 						if _, err := client.Put("/env-vars/"+fmt.Sprint(remoteEnvVar.ID), models.UpdateEnvVarRequest{Value: val}); err != nil {
-							fmt.Printf("failed to update env var: %s", err)
+							fmt.Printf("failed to update env var: %s\n", err)
 							os.Exit(1)
 						}
 					}
@@ -221,19 +222,19 @@ var syncEnvVarsCmd = &cobra.Command{
 				case "d":
 
 					if _, err := client.Delete("/env-vars/" + fmt.Sprint(pair.ID)); err != nil {
-						fmt.Printf("failed to delete env var: %s", err)
+						fmt.Printf("failed to delete env var: %s\n", err)
 					}
 				case "p":
 					f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 					if err != nil {
-						fmt.Printf("failed to open file %s", err)
+						fmt.Printf("failed to open file %s\n", err)
 						os.Exit(1)
 					}
 
 					defer f.Close()
 
 					if _, err := fmt.Fprintf(f, "%s=%s\n", key, pair.Value); err != nil {
-						fmt.Printf("failed to pull env var: %s", err)
+						fmt.Printf("failed to pull env var: %s\n", err)
 						os.Exit(1)
 					}
 				}
