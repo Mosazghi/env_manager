@@ -4,9 +4,6 @@ Are you tired of juggling multiple `.env` files across different projects and de
 
 The env_manager is a self-hosted environment variable manager that allows you to securely store, manage, and access your environment variables from anywhere. 
 
-It's meant to be self-hosted on your own server (e.g. on a RPi) and accessed via its CLI app. 
-
-
 > [!WARNING]
 This project is under active development and not yet ready for production use.
 
@@ -89,3 +86,7 @@ Once Caddy starts it will automatically obtain a TLS certificate, no manual cert
 
 
 You should be able to access the env manager securely at `https://your-domain.com` now!
+
+# Usage 
+
+TODO
