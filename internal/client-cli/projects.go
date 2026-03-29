@@ -24,7 +24,8 @@ var fetchProjectsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all projects",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(token)
+		baseURL, _ := rootCmd.Flags().GetString("server-url")
+		client := api.NewClient(token, baseURL)
 		data, err := client.Get("/projects")
 		if err != nil {
 			return err
@@ -53,7 +54,8 @@ var createProjectCmd = &cobra.Command{
 	Short: "Create a new project",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(token)
+		baseURL, _ := rootCmd.Flags().GetString("server-url")
+		client := api.NewClient(token, baseURL)
 		var body models.CreateProjectRequest
 		body.Name = args[0]
 		body.Description = args[1]
@@ -70,7 +72,8 @@ var loadEnvsForProjectCmd = &cobra.Command{
 	Use:   "load",
 	Short: "Load env variables for project",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(token)
+		baseURL, _ := rootCmd.Flags().GetString("server-url")
+		client := api.NewClient(token, baseURL)
 		projectID, _ := rootCmd.Flags().GetString("project-id")
 		data, err := client.Get("/projects/" + projectID + "/env-vars")
 		if err != nil {
@@ -105,7 +108,8 @@ var syncEnvVarsCmd = &cobra.Command{
 	Use:   "sync [force] [filePath]",
 	Short: "Sync env variables for project",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(token)
+		baseURL, _ := rootCmd.Flags().GetString("server-url")
+		client := api.NewClient(token, baseURL)
 
 		filePath, err := cmd.Flags().GetString("file-path")
 		forceUpdate, err := cmd.Flags().GetBool("force-update")

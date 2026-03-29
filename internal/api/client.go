@@ -8,15 +8,14 @@ import (
 	"net/http"
 )
 
-const baseURL = "http://localhost:8080/api"
-
 type Client struct {
 	token      string
+	baseURL    string
 	httpClient *http.Client
 }
 
-func NewClient(token string) *Client {
-	return &Client{token: token, httpClient: &http.Client{}}
+func NewClient(token string, baseURL string) *Client {
+	return &Client{token: token, httpClient: &http.Client{}, baseURL: baseURL}
 }
 
 func (c *Client) do(method, path string, body any) ([]byte, error) {
@@ -26,7 +25,7 @@ func (c *Client) do(method, path string, body any) ([]byte, error) {
 		bodyReader = bytes.NewReader(b)
 	}
 
-	req, err := http.NewRequest(method, baseURL+path, bodyReader)
+	req, err := http.NewRequest(method, fmt.Sprintf("%v/api%v", c.baseURL, path), bodyReader)
 	if err != nil {
 		return nil, err
 	}

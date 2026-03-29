@@ -13,6 +13,7 @@ import (
 var (
 	token      string
 	projectID  string
+	serverURL  string
 	silentMode bool
 )
 
@@ -46,6 +47,10 @@ func init() {
 		if strings.Contains(line, "PROJET_ID") {
 			projectID = strings.Split(line, "=")[1]
 		}
+
+		if strings.Contains(line, "SERVER_URL") {
+			serverURL = strings.Split(line, "=")[1]
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -54,5 +59,6 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&token, "token", token, "API token (or set ENVM_TOKEN)")
 	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", projectID, "Default Project ID")
+	rootCmd.PersistentFlags().StringVar(&serverURL, "server-url", serverURL, "Default Server Url")
 	rootCmd.PersistentFlags().BoolVar(&silentMode, "silent-mode", false, "Silent Mode")
 }
