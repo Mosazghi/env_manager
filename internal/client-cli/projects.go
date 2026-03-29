@@ -119,7 +119,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		localEnvVars := make(map[string]string)
 
-		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0o644)
 		if err != nil {
 			fmt.Printf("failed to open file: %s\n", err)
 			os.Exit(1)
