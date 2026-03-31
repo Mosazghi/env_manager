@@ -1,6 +1,9 @@
 package database
 
 import (
+	"os"
+	"path/filepath"
+
 	"env-manager/internal/models"
 
 	"gorm.io/driver/sqlite"
@@ -9,6 +12,10 @@ import (
 )
 
 func NewSQLite(path string) (*gorm.DB, error) {
+	if err := ensureDir(path); err != nil {
+		return nil, err
+	}
+
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -22,4 +29,8 @@ func NewSQLite(path string) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func ensureDir(path string) error {
+	return os.MkdirAll(filepath.Dir(path), 0o700)
 }
