@@ -17,14 +17,14 @@ func NewSQLite(path string) (*gorm.DB, error) {
 	}
 
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Auto-migrate all models
-	if err := db.AutoMigrate(&models.Project{}, &models.EnvVar{}); err != nil {
+	if err := db.AutoMigrate(&models.Project{}, &models.EnvVar{}, &models.Token{}); err != nil {
 		return nil, err
 	}
 

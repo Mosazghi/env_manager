@@ -1,13 +1,15 @@
 package router
 
 import (
+	"env-manager/internal/repository"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func AuthRequired(expectedToken string) gin.HandlerFunc {
+func AuthRequired(tokenRepo *repository.TokenRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -23,11 +25,20 @@ func AuthRequired(expectedToken string) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		if tokenString != expectedToken {
+		validTokens, err := (*tokenRepo).FindAllValid(tokenString[:8])
+
+		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
+		for _, token := range validTokens {
+			if bcrypt.CompareHashAndPassword([]byte(token.HashedToken), []byte(tokenString)) == nil {
+				c.Next()
+				return
+			}
+		}
 
-		c.Next()
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+
 	}
 }

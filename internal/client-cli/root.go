@@ -1,4 +1,4 @@
-package cmd
+package clientcli
 
 import (
 	"bufio"
@@ -18,8 +18,8 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "envm",
-	Short: "env-manager CLI",
+	Use:   "envm-client",
+	Short: "env-manager Client CLI",
 }
 
 func Execute() {
@@ -57,8 +57,8 @@ func init() {
 		log.Fatalf("scanner encountered an error: %s", err)
 	}
 
-	rootCmd.PersistentFlags().StringVar(&token, "token", token, "API token (or set ENVM_TOKEN)")
-	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", projectID, "Default Project ID")
-	rootCmd.PersistentFlags().StringVar(&serverURL, "server-url", serverURL, "Default Server Url")
-	rootCmd.PersistentFlags().BoolVar(&silentMode, "silent-mode", false, "Silent Mode")
+	rootCmd.PersistentFlags().StringVarP(&token, "token", "t", token, "API token (or set ENVM_TOKEN)")
+	rootCmd.PersistentFlags().StringVarP(&projectID, "project-id", "i", projectID, "Default Project ID")
+	rootCmd.PersistentFlags().StringVarP(&serverURL, "server-url", "u", serverURL, "Default Server Url")
+	rootCmd.PersistentFlags().BoolVarP(&silentMode, "silent-mode", "s", false, "Silent Mode")
 }
