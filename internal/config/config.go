@@ -35,20 +35,20 @@ func getEnv(key, fallback string) string {
 }
 
 func defaultDBPath() string {
-	switch runtime.GOOS {
-	case "linux":
-		if xdg := os.Getenv("XDG_DATA_HOME"); xdg != "" {
-			return filepath.Join(xdg, "envm", "envm.db")
-		}
-		return filepath.Join(os.Getenv("HOME"), ".local", "share", "envm", "envm.db")
+	// systemd complicance for linux
 
-	case "darwin":
-		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "envm", "envm.db")
-
-	case "windows":
-		return filepath.Join(os.Getenv("APPDATA"), "envm", "envm.db")
-
-	default:
-		return filepath.Join(os.Getenv("HOME"), ".envm", "envm.db")
+	if runtime.GOOS == "linux" {
+		return filepath.Join("/var/lib", "envm", "envm.db")
 	}
+
+	if stateDir := os.Getenv("STATE_DIRECTORY"); stateDir != "" {
+		return filepath.Join(stateDir, "envm.db")
+	}
+
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatal("cannot determine config directory: ", err)
+	}
+
+	return filepath.Join(configDir, "envm", "envm.db")
 }

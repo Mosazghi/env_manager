@@ -1,7 +1,7 @@
 package main
 
-import cmd "env-manager/internal/client-cli"
+import clientcli "env-manager/internal/client-cli"
 
 func main() {
-	cmd.Execute()
+	clientcli.Execute()
 }

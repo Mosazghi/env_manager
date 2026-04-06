@@ -2,16 +2,16 @@ package router
 
 import (
 	"env-manager/internal/handler"
+	"env-manager/internal/repository"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func Setup(projectHandler *handler.ProjectHandler, envVarHandler *handler.EnvVarHandlerand) *gin.Engine {
-	token := "4ebe17469d06d6823d9e9339ae97085d2c8bbca82f5e559ac3a48b6ecd7e8e67c20c2f35ef62c313e7eb752f42ff9525"
+func Setup(projectHandler *handler.ProjectHandler, envVarHandler *handler.EnvVarHandlerand, tokenRepo *repository.TokenRepository) *gin.Engine {
 
 	r := gin.Default()
-	r.Use(AuthRequired(token))
+	r.Use(AuthRequired(tokenRepo))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

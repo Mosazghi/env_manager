@@ -1,4 +1,4 @@
-package cmd
+package clientcli
 
 import (
 	"bufio"
@@ -23,7 +23,7 @@ var projectsCmd = &cobra.Command{
 var fetchProjectsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all projects",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		data, err := client.Get("/projects")
@@ -53,7 +53,7 @@ var createProjectCmd = &cobra.Command{
 	Use:   "create [name] [description]",
 	Short: "Create a new project",
 	Args:  cobra.ExactArgs(2),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		var body models.CreateProjectRequest
@@ -71,7 +71,7 @@ var createProjectCmd = &cobra.Command{
 var loadEnvsForProjectCmd = &cobra.Command{
 	Use:   "load",
 	Short: "Load env variables for project",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		projectID, _ := rootCmd.Flags().GetString("project-id")
@@ -107,12 +107,12 @@ var loadEnvsForProjectCmd = &cobra.Command{
 var syncEnvVarsCmd = &cobra.Command{
 	Use:   "sync [force] [filePath]",
 	Short: "Sync env variables for project",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 
-		filePath, _ := cmd.Flags().GetString("file-path")
-		forceUpdate, err := cmd.Flags().GetBool("force-update")
+		filePath, _ := clientcli.Flags().GetString("file-path")
+		forceUpdate, err := clientcli.Flags().GetBool("force-update")
 		if err != nil {
 			return err
 		}
@@ -251,8 +251,8 @@ var syncEnvVarsCmd = &cobra.Command{
 }
 
 func init() {
-	syncEnvVarsCmd.Flags().Bool("force-update", false, "force variable updates")
-	syncEnvVarsCmd.Flags().String("file-path", ".env", "filepath to .env")
+	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates")
+	syncEnvVarsCmd.Flags().StringP("file-path", "p", ".env", "filepath to .env")
 	projectsCmd.AddCommand(fetchProjectsCmd, createProjectCmd, loadEnvsForProjectCmd, syncEnvVarsCmd)
 	rootCmd.AddCommand(projectsCmd)
 }
