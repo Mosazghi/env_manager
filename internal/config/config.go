@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/joho/godotenv"
 )
@@ -34,7 +35,12 @@ func getEnv(key, fallback string) string {
 }
 
 func defaultDBPath() string {
-	// systemd service override (Linux only)
+	// systemd complicance for linux
+
+	if runtime.GOOS == "linux" {
+		return filepath.Join("/var/lib", "envm", "envm.db")
+	}
+
 	if stateDir := os.Getenv("STATE_DIRECTORY"); stateDir != "" {
 		return filepath.Join(stateDir, "envm.db")
 	}

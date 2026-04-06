@@ -1,14 +1,15 @@
 package servercli
 
 import (
-	"env-manager/internal/config"
-	"env-manager/internal/database"
-	"env-manager/internal/models"
-	"env-manager/internal/repository"
 	"fmt"
 	"log"
 	"os"
 	"time"
+
+	"env-manager/internal/config"
+	"env-manager/internal/database"
+	"env-manager/internal/models"
+	"env-manager/internal/repository"
 
 	"github.com/kardianos/service"
 	"github.com/spf13/cobra"
@@ -43,6 +44,7 @@ var tokenCreateCmd = &cobra.Command{
 		}
 
 		cfg := config.Load()
+		fmt.Printf("Loaded config: Port=%s, DBPath=%s, Env=%s\n", cfg.Port, cfg.DBPath, cfg.Env)
 
 		db, err := database.NewSQLite(cfg.DBPath)
 		if err != nil {
@@ -92,8 +94,7 @@ var serverExecCmd = &cobra.Command{
 			Description:  "Background HTTP API server for Env manager",
 			Dependencies: serviceDependencies,
 			Option: service.KeyValue{
-				"OnFailure":      "restart",
-				"StateDirectory": "envm",
+				"OnFailure": "restart",
 			},
 			Arguments: []string{"exec"},
 		}
@@ -119,7 +120,8 @@ var serverExecCmd = &cobra.Command{
 
 		}
 		return nil
-	}}
+	},
+}
 
 func init() {
 	tokenCreateCmd.Flags().StringP("expires-in", "e", "1h", "Duration until the token expires (e.g. 30m, 2h, 10d)")
