@@ -6,7 +6,7 @@ import (
 
 	"env-manager/internal/models"
 
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite" // ← GORM driver, pure Go, no CGO
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -23,7 +23,6 @@ func NewSQLite(path string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// Auto-migrate all models
 	if err := db.AutoMigrate(&models.Project{}, &models.EnvVar{}, &models.Token{}); err != nil {
 		return nil, err
 	}

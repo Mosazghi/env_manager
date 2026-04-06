@@ -90,7 +90,7 @@ var serverExecCmd = &cobra.Command{
 			Name:         "EnvManagerServer",
 			DisplayName:  "Env Manager Server API Service",
 			Description:  "Background HTTP API server for Env manager",
-			Dependencies: []string{"After=network.target"},
+			Dependencies: serviceDependencies,
 			Option: service.KeyValue{
 				"OnFailure":      "restart",
 				"StateDirectory": "envm",
