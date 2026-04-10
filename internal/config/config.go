@@ -36,7 +36,6 @@ func getEnv(key, fallback string) string {
 
 func defaultDBPath() string {
 	// systemd complicance for linux
-
 	if runtime.GOOS == "linux" {
 		return filepath.Join("/var/lib", "envm", "envm.db")
 	}

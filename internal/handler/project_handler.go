@@ -56,9 +56,16 @@ func (h *ProjectHandler) GetEnvVars(c *gin.Context) {
 		return
 	}
 
-	envVars, err := h.repo.FindEnvVarsByID(uint(id))
+	rawEnvVars, err := h.repo.FindEnvVarsByID(uint(id))
+
 	if err != nil {
 		c.JSON(http.StatusNotFound, ToResponse(false, "env vars not found", nil))
+		return
+	}
+
+	envVars, err := DecryptEnvVars(&rawEnvVars)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, ToResponse(true, "Env vars found", envVars))

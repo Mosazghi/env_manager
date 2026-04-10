@@ -1,10 +1,12 @@
 package handler
 
 import (
-	"env-manager/internal/models"
-	"env-manager/internal/repository"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"env-manager/internal/models"
+	"env-manager/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +29,11 @@ func (h *EnvVarHandlerand) GetAll(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	envVars, err = DecryptEnvVars(&envVars)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, ToResponse(true, "Env vars retrieved", envVars))
 }
 
@@ -37,7 +44,7 @@ func (h *EnvVarHandlerand) Create(c *gin.Context) {
 		return
 	}
 
-	envVar := &models.EnvVar{ProjectID: req.ProjectID, Key: req.Key, Value: req.Value}
+	envVar := &models.EnvVar{ProjectID: req.ProjectID, Key: req.Key, EncryptedVal: req.Value}
 
 	// check if project exists
 	_, err := h.projectsRepo.FindByID(uint(req.ProjectID))
@@ -45,6 +52,14 @@ func (h *EnvVarHandlerand) Create(c *gin.Context) {
 		c.JSON(http.StatusNotFound, ToResponse(false, "project not found", nil))
 		return
 	}
+
+	enc, err := EncryptValue(req.Value)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+		return
+	}
+
+	envVar.EncryptedVal = enc
 
 	if err := h.envVarsRepo.Create(envVar); err != nil {
 		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
@@ -65,6 +80,13 @@ func (h *EnvVarHandlerand) FindByID(c *gin.Context) {
 		c.JSON(http.StatusNotFound, ToResponse(false, "env var not found", nil))
 		return
 	}
+
+	dec, err := DecryptValue(envVar.EncryptedVal)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ToResponse(false, err.Error(), nil))
+		return
+	}
+	envVar.Value = string(dec)
 	c.JSON(http.StatusOK, ToResponse(true, "Env var found", envVar))
 }
 
@@ -91,7 +113,12 @@ func (h *EnvVarHandlerand) Update(c *gin.Context) {
 		envVar.Key = req.Key
 	}
 	if req.Value != "" {
-		envVar.Value = req.Value
+		enc, err := EncryptValue(req.Value)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+			return
+		}
+		envVar.EncryptedVal = enc
 	}
 
 	if err := h.envVarsRepo.Update(envVar); err != nil {
@@ -105,6 +132,12 @@ func (h *EnvVarHandlerand) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
+		return
+	}
+
+	_, err = h.envVarsRepo.FindByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, ToResponse(false, fmt.Sprintf("env var with ID %v doesn't exists", id), nil))
 		return
 	}
 

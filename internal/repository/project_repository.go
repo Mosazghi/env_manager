@@ -9,7 +9,7 @@ import (
 type ProjectRepository interface {
 	FindAll() ([]models.Project, error)
 	FindByID(id uint) (*models.Project, error)
-	FindEnvVarsByID(id uint) ([]*models.EnvVar, error)
+	FindEnvVarsByID(id uint) ([]models.EnvVar, error)
 	Create(project *models.Project) error
 	Update(project *models.Project) error
 	Delete(id uint) error
@@ -36,8 +36,8 @@ func (r *projectRepository) FindByID(id uint) (*models.Project, error) {
 	return &project, result.Error
 }
 
-func (r *projectRepository) FindEnvVarsByID(id uint) ([]*models.EnvVar, error) {
-	var envVars []*models.EnvVar
+func (r *projectRepository) FindEnvVarsByID(id uint) ([]models.EnvVar, error) {
+	var envVars []models.EnvVar
 	result := r.db.Where("project_id = ?", id).Find(&envVars)
 	return envVars, result.Error
 }
