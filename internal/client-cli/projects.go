@@ -89,14 +89,14 @@ var loadEnvsForProjectCmd = &cobra.Command{
 
 		f, err := os.OpenFile(".env", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
-			os.Exit(1)
+			return fmt.Errorf("failed to open file: %v", err)
 		}
 
 		defer f.Close()
 
 		for _, env := range resp.Data {
 			if _, err := fmt.Fprintf(f, "%s=%s\n", env.Key, env.Value); err != nil {
-				os.Exit(1)
+				fmt.Printf("warning: failed to write key '%v' to file", env.Key)
 			}
 		}
 
@@ -121,8 +121,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0o644)
 		if err != nil {
-			fmt.Printf("failed to open file: %s\n", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to open file: %s", err)
 		}
 		defer file.Close()
 
@@ -138,7 +137,6 @@ var syncEnvVarsCmd = &cobra.Command{
 			}
 		}
 
-		// Remote vars
 		projectID, _ := rootCmd.Flags().GetString("project-id")
 		silentMode, _ := rootCmd.Flags().GetBool("silent-mode")
 		data, err := client.Get("/projects/" + projectID + "/env-vars")
@@ -168,28 +166,28 @@ var syncEnvVarsCmd = &cobra.Command{
 			if !exist {
 				pIDInt, err := strconv.Atoi(projectID)
 				if err != nil {
-					fmt.Println("Project ID conversion failed")
-					os.Exit(1)
+					return fmt.Errorf("project ID conversion failed")
 				}
 				if _, err := client.Post("/env-vars", models.CreateEnvVarRequest{Key: key, Value: val, ProjectID: pIDInt}); err != nil {
-					fmt.Printf("failed to create env var: %s\n", err)
-					os.Exit(1)
+					return fmt.Errorf("failed to create env var: %s", err)
 				}
-				fmt.Println("Uploaded a new variable")
+				fmt.Println("uploaded a new variable")
 			}
 
 			// If it exists but value is different, update it
 			if exist {
 				if remoteEnvVar.Value != val {
-					update := func() {
+					update := func() error {
 						if _, err := client.Put("/env-vars/"+fmt.Sprint(remoteEnvVar.ID), models.UpdateEnvVarRequest{Value: val}); err != nil {
-							fmt.Printf("failed to update env var: %s\n", err)
-							os.Exit(1)
+							return fmt.Errorf("failed to update env var: %s", err)
 						}
+						return nil
 					}
 
 					if forceUpdate {
-						update()
+						if err := update(); err != nil {
+							return err
+						}
 					} else {
 						var confirmation string
 						if !silentMode {
@@ -202,7 +200,9 @@ var syncEnvVarsCmd = &cobra.Command{
 						confirmation = strings.ToLower(confirmation)
 
 						if confirmation == "y" {
-							update()
+							if err := update(); err != nil {
+								return err
+							}
 						}
 					}
 				}
@@ -231,15 +231,13 @@ var syncEnvVarsCmd = &cobra.Command{
 				case "p":
 					f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 					if err != nil {
-						fmt.Printf("failed to open file %s\n", err)
-						os.Exit(1)
+						return fmt.Errorf("failed to open file %s", err)
 					}
 
 					defer f.Close()
 
 					if _, err := fmt.Fprintf(f, "%s=%s\n", key, pair.Value); err != nil {
-						fmt.Printf("failed to pull env var: %s\n", err)
-						os.Exit(1)
+						return fmt.Errorf("failed to pull env var: %s", err)
 					}
 				}
 

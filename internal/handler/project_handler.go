@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -46,6 +47,12 @@ func (h *ProjectHandler) GetEnvVars(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
+		return
+	}
+
+	_, err = h.repo.FindByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, ToResponse(false, fmt.Sprintf("project with ID %v doesn't exists", id), nil))
 		return
 	}
 

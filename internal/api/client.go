@@ -24,8 +24,8 @@ func (c *Client) do(method, path string, body any) ([]byte, error) {
 		b, _ := json.Marshal(body)
 		bodyReader = bytes.NewReader(b)
 	}
-
-	req, err := http.NewRequest(method, fmt.Sprintf("%v/api%v", c.baseURL, path), bodyReader)
+	url := fmt.Sprintf("%v/api%v", c.baseURL, path)
+	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +38,16 @@ func (c *Client) do(method, path string, body any) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("server returned %d", resp.StatusCode)
+	parsedBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("couldnt parse response body")
 	}
 
-	return io.ReadAll(resp.Body)
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("error: %v", string(parsedBody))
+	}
+
+	return parsedBody, nil
 }
 
 func (c *Client) Get(path string) ([]byte, error)            { return c.do("GET", path, nil) }

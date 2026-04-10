@@ -18,8 +18,10 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "envm-client",
-	Short: "env-manager Client CLI",
+	Use:           "envm-client",
+	Short:         "env-manager Client CLI",
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func Execute() {
