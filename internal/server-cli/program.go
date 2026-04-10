@@ -2,15 +2,16 @@ package servercli
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"env-manager/internal/config"
 	"env-manager/internal/database"
 	"env-manager/internal/handler"
 	"env-manager/internal/repository"
 	"env-manager/internal/router"
-	"fmt"
-	"log"
-	"net/http"
-	"time"
 
 	"github.com/bytedance/gopkg/util/logger"
 	"github.com/kardianos/service"
