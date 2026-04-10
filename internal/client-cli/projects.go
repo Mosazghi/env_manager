@@ -190,11 +190,14 @@ var syncEnvVarsCmd = &cobra.Command{
 						}
 					} else {
 						var confirmation string
-						if !silentMode {
-							fmt.Printf("%v's value changed: %v => %v. Update to remote (y/N)? ", key, remoteEnvVar.Value, val)
+
+						msg := "%v's value changed: %v => %v. Update to remote (y/N)? "
+						if silentMode {
+							fmt.Printf(msg, key, generateStars(remoteEnvVar.Value), generateStars(val))
 						} else {
-							fmt.Printf("%v's value changed: [len=%v] => [len=%v]. Update to remote (y/N)? ", key, len(remoteEnvVar.Value), len(val))
+							fmt.Printf(msg, key, remoteEnvVar.Value, val)
 						}
+
 						fmt.Scanln(&confirmation)
 
 						confirmation = strings.ToLower(confirmation)
@@ -213,18 +216,19 @@ var syncEnvVarsCmd = &cobra.Command{
 		for key, pair := range remoteEnvVars {
 			if _, exists := localEnvVars[key]; !exists {
 				var confirmation string
-				if !silentMode {
-					fmt.Printf("%v=%v (%v) doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)? ", key, pair.Value, pair.ID)
+				msg := "%v=%v doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)?"
+				if silentMode {
+					fmt.Printf(msg, key, generateStars(pair.Value))
 				} else {
-					fmt.Printf("%v = [len=%v] (%v) doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)? ", key, len(pair.Value), pair.ID)
+					fmt.Printf(msg, key, pair.Value)
 				}
 				fmt.Scanln(&confirmation)
 
 				confirmation = strings.ToLower(confirmation)
 
 				switch confirmation {
-				case "d":
 
+				case "d":
 					if _, err := client.Delete("/env-vars/" + fmt.Sprint(pair.ID)); err != nil {
 						fmt.Printf("failed to delete env var: %s\n", err)
 					}
@@ -246,6 +250,10 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func generateStars(str string) string {
+	return strings.Repeat("*", len(str))
 }
 
 func init() {

@@ -62,7 +62,12 @@ var tokenCreateCmd = &cobra.Command{
 		tokenRepo := repository.NewTokenRepository(db)
 
 		var token models.Token
-		token.ExpiresAt = time.Now().Add(parseDuration(expiresIn))
+		parsedDuration, err := parseDuration(expiresIn)
+		if err != nil {
+			return fmt.Errorf("failed to parse duration: %v", err)
+		}
+
+		token.ExpiresAt = time.Now().Add(parsedDuration)
 
 		rawToken := generateRandomToken()
 		hashedToken, err := bcrypt.GenerateFromPassword([]byte(rawToken), bcrypt.DefaultCost)
