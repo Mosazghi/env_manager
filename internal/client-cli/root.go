@@ -31,10 +31,10 @@ func Execute() {
 	}
 }
 
-func init() {
-	file, err := os.Open(".envm.config")
+func loadClientConfig(path string) error {
+	file, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("impossible to open file: %s", err)
+		return err
 	}
 	defer file.Close()
 
@@ -42,21 +42,32 @@ func init() {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.Contains(line, "ENVM_TOKEN") {
-			token = strings.Split(line, "=")[1]
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
 		}
 
-		if strings.Contains(line, "PROJET_ID") {
-			projectID = strings.Split(line, "=")[1]
-		}
-
-		if strings.Contains(line, "SERVER_URL") {
-			serverURL = strings.Split(line, "=")[1]
+		key, value := parts[0], parts[1]
+		switch key {
+		case "ENVM_TOKEN":
+			token = value
+		case "PROJECT_ID", "PROJET_ID":
+			projectID = value
+		case "SERVER_URL":
+			serverURL = value
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatalf("scanner encountered an error: %s", err)
+		return fmt.Errorf("scanner encountered an error: %w", err)
+	}
+
+	return nil
+}
+
+func init() {
+	if err := loadClientConfig(".envm.config"); err != nil && !os.IsNotExist(err) {
+		log.Printf("warning: failed to load .envm.config: %v", err)
 	}
 
 	rootCmd.PersistentFlags().StringVarP(&token, "token", "t", token, "API token (or set ENVM_TOKEN)")
