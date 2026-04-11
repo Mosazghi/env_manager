@@ -3,6 +3,9 @@ package servercli
 import (
 	"crypto/rand"
 	"fmt"
+	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -25,4 +28,16 @@ func parseDuration(s string) (time.Duration, error) {
 
 func generateRandomToken() string {
 	return rand.Text()
+}
+
+func ClearScreen() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }

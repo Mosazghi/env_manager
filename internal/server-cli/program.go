@@ -2,7 +2,6 @@ package servercli
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -23,7 +22,6 @@ type program struct {
 
 func (p *program) Start(s service.Service) error {
 	cfg := config.Load()
-	fmt.Printf("Loaded config: Port=%s, DBPath=%s, Env=%s\n", cfg.Port, cfg.DBPath, cfg.Env)
 	db, err := database.NewSQLite(cfg.DBPath)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
