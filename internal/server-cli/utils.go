@@ -3,7 +3,6 @@ package servercli
 import (
 	"crypto/rand"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -26,11 +25,4 @@ func parseDuration(s string) (time.Duration, error) {
 
 func generateRandomToken() string {
 	return rand.Text()
-}
-
-func getMasterPassphrase() (string, error) {
-	credPath := os.Getenv("CREDENTIALS_DIRECTORY") + "/envm-passphrase"
-	data, err := os.ReadFile(credPath)
-
-	return strings.TrimSpace(string(data)), err
 }

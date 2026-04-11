@@ -167,10 +167,6 @@ func masterKeyFilePath() (string, error) {
 		return path, nil
 	}
 
-	if stateDir := os.Getenv("STATE_DIRECTORY"); stateDir != "" {
-		return filepath.Join(stateDir, "master.key"), nil
-	}
-
 	configDir, err := os.UserConfigDir()
 	if err == nil {
 		return filepath.Join(configDir, "envm", "master.key"), nil

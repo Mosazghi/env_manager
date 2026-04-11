@@ -36,7 +36,7 @@ func (r *envVarRepository) FindAll(page, limit int) ([]models.EnvVar, int64, err
 
 func (r *envVarRepository) FindByProjectID(projectID uint) ([]*models.EnvVar, error) {
 	var envVars []*models.EnvVar
-	result := r.db.Where(&envVars, "project_id = ?", projectID)
+	result := r.db.Where("project_id = ?", projectID).Find(&envVars)
 	return envVars, result.Error
 }
 
