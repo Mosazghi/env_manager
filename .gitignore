@@ -7,3 +7,5 @@
 *.out
 data/
 tmp/**
+.env
+.envm.config
