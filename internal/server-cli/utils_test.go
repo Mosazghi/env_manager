@@ -1,6 +1,9 @@
 package servercli
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -42,5 +45,29 @@ func TestGenerateRandomToken(t *testing.T) {
 
 	if a == b {
 		t.Fatal("expected two generated tokens to differ")
+	}
+}
+
+func TestDeliverTokenFileMode(t *testing.T) {
+	tokenPath := filepath.Join(t.TempDir(), "token.txt")
+
+	if err := deliverToken("abc123", "1h", "file", tokenPath); err != nil {
+		t.Fatalf("deliverToken returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(tokenPath)
+	if err != nil {
+		t.Fatalf("failed reading token file: %v", err)
+	}
+
+	if strings.TrimSpace(string(data)) != "abc123" {
+		t.Fatalf("unexpected token file content: %q", string(data))
+	}
+}
+
+func TestDeliverTokenInvalidMode(t *testing.T) {
+	err := deliverToken("abc123", "1h", "invalid", "")
+	if err == nil {
+		t.Fatal("expected error for invalid output mode")
 	}
 }

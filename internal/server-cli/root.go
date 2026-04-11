@@ -46,7 +46,6 @@ var tokenCreateCmd = &cobra.Command{
 		}
 
 		cfg := config.Load()
-		fmt.Printf("Loaded config: Port=%s, DBPath=%s, Env=%s\n", cfg.Port, cfg.DBPath, cfg.Env)
 
 		db, err := database.NewSQLite(cfg.DBPath)
 		if err != nil {
@@ -84,8 +83,21 @@ var tokenCreateCmd = &cobra.Command{
 
 		// silently delete expired tokens on each creation to avoid cluttering the database with old tokens
 		tokenRepo.DeleteExpired()
+		line1 := fmt.Sprintf("Token created: %s (expires %s)", rawToken, time.Now().Add(parsedDuration).Local().Format(time.DateTime))
+		line2 := "Copy this token now, it won't be shown again!"
 
-		fmt.Printf("Token created: %s (expires in %s)\nCopy this token now, it won't be shown again!\n", rawToken, expiresIn)
+		fmt.Printf("%s\n%s\n", line1, line2)
+		hideAt := time.Now().Add(tokenDisplayTime)
+		go func() {
+			for time.Until(hideAt) > 0 {
+				remaining := time.Until(hideAt).Round(time.Second)
+				fmt.Printf("\rHiding token in: %s ", remaining)
+				time.Sleep(1 * time.Second)
+			}
+		}()
+
+		time.Sleep(tokenDisplayTime)
+		ClearScreen()
 
 		return nil
 	},
@@ -103,7 +115,7 @@ var serverExecCmd = &cobra.Command{
 			Option: service.KeyValue{
 				"OnFailure": "restart",
 			},
-			Arguments: []string{"exec"},
+			Arguments: []string{"service"},
 		}
 
 		prg := &program{}
