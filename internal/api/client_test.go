@@ -92,3 +92,45 @@ func TestClientReturnsErrorForHTTPFailure(t *testing.T) {
 		t.Fatalf("expected error to include response body, got: %v", err)
 	}
 }
+
+func TestClientPutAndDelete(t *testing.T) {
+	seenPut := false
+	seenDelete := false
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPut:
+			seenPut = true
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"updated"}`))
+		case http.MethodDelete:
+			seenDelete = true
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"deleted"}`))
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient("token-123", server.URL)
+	if _, err := client.Put("/projects/1", map[string]string{"name": "updated"}); err != nil {
+		t.Fatalf("Put returned error: %v", err)
+	}
+
+	if _, err := client.Delete("/projects/1"); err != nil {
+		t.Fatalf("Delete returned error: %v", err)
+	}
+
+	if !seenPut || !seenDelete {
+		t.Fatalf("expected both PUT and DELETE handlers to be hit, put=%v delete=%v", seenPut, seenDelete)
+	}
+}
+
+func TestClientInvalidURLReturnsError(t *testing.T) {
+	client := NewClient("token-123", "http://bad\nurl")
+	_, err := client.Get("/projects")
+	if err == nil {
+		t.Fatal("expected error for invalid URL")
+	}
+}

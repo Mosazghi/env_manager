@@ -40,10 +40,6 @@ func defaultDBPath() string {
 		return filepath.Join("/var/lib", "envm", "envm.db")
 	}
 
-	if stateDir := os.Getenv("STATE_DIRECTORY"); stateDir != "" {
-		return filepath.Join(stateDir, "envm.db")
-	}
-
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatal("cannot determine config directory: ", err)

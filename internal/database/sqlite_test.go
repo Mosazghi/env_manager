@@ -44,3 +44,10 @@ func TestNewSQLiteCreatesDatabaseAndMigrates(t *testing.T) {
 		t.Fatalf("expected sqlite db file to exist: %v", err)
 	}
 }
+
+func TestNewSQLiteInvalidPath(t *testing.T) {
+	_, err := NewSQLite(t.TempDir())
+	if err == nil {
+		t.Fatal("expected error for invalid database path")
+	}
+}

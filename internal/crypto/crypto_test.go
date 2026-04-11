@@ -8,7 +8,7 @@ import (
 var testKey = []byte("0123456789abcdef0123456789abcdef")
 
 func TestEncryptDecryptRoundTrip(t *testing.T) {
-	plain := []byte("DATABASE_URL=postgres://localhost")
+	plain := []byte("postgres://localhost")
 
 	encrypted, err := Encrypt(testKey, plain)
 	if err != nil {
@@ -57,5 +57,17 @@ func TestDecryptWithWrongKeyFails(t *testing.T) {
 	_, err = Decrypt(wrongKey, encrypted)
 	if err == nil {
 		t.Fatal("expected error when decrypting with wrong key")
+	}
+}
+
+func TestDecryptInvalidKeyLength(t *testing.T) {
+	enc, err := Encrypt(testKey, []byte("value"))
+	if err != nil {
+		t.Fatalf("Encrypt returned error: %v", err)
+	}
+
+	_, err = Decrypt([]byte("short"), enc)
+	if err == nil {
+		t.Fatal("expected decrypt to fail for invalid key length")
 	}
 }

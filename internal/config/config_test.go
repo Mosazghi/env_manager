@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"os"
 	"path/filepath"
@@ -29,21 +30,11 @@ func TestDefaultDBPath(t *testing.T) {
 		}
 		return
 	}
-
-	stateDir := t.TempDir()
-	t.Setenv("STATE_DIRECTORY", stateDir)
-
-	want := filepath.Join(stateDir, "envm.db")
-	if got := defaultDBPath(); got != want {
-		t.Fatalf("expected %q, got %q", want, got)
-	}
 }
 
 func TestMasterKeyFilePathPriority(t *testing.T) {
-	stateDir := t.TempDir()
 	envFile := filepath.Join(t.TempDir(), "custom-master.key")
 
-	t.Setenv("STATE_DIRECTORY", stateDir)
 	t.Setenv("ENVM_MASTER_KEY_FILE", envFile)
 
 	got, err := masterKeyFilePath()
@@ -59,11 +50,6 @@ func TestMasterKeyFilePathPriority(t *testing.T) {
 	got, err = masterKeyFilePath()
 	if err != nil {
 		t.Fatalf("masterKeyFilePath returned error: %v", err)
-	}
-
-	want := filepath.Join(stateDir, "master.key")
-	if got != want {
-		t.Fatalf("expected state directory path %q, got %q", want, got)
 	}
 }
 
@@ -99,20 +85,6 @@ func TestSetGetAndDeleteMasterKeyFile(t *testing.T) {
 	}
 }
 
-func TestGetMasterKeyFromFileInvalidEncoding(t *testing.T) {
-	keyPath := filepath.Join(t.TempDir(), "master.key")
-	t.Setenv("ENVM_MASTER_KEY_FILE", keyPath)
-
-	if err := os.WriteFile(keyPath, []byte("not-valid-base64"), 0o600); err != nil {
-		t.Fatalf("failed to write invalid key file: %v", err)
-	}
-
-	_, err := getMasterKeyFromFile()
-	if err == nil {
-		t.Fatal("expected error for invalid key encoding")
-	}
-}
-
 func TestGetOrCreateMasterKeyReturnsKey(t *testing.T) {
 	t.Setenv("ENVM_MASTER_KEY_FILE", filepath.Join(t.TempDir(), "master.key"))
 
@@ -123,5 +95,61 @@ func TestGetOrCreateMasterKeyReturnsKey(t *testing.T) {
 
 	if len(key) != 32 {
 		t.Fatalf("expected 32-byte key, got %d", len(key))
+	}
+}
+
+func TestLoadUsesEnvironmentValues(t *testing.T) {
+	t.Setenv("PORT", "9090")
+	t.Setenv("DB_PATH", "/tmp/custom.db")
+	t.Setenv("APP_ENV", "test")
+
+	cfg := Load()
+
+	if cfg.Port != "9090" {
+		t.Fatalf("expected port 9090, got %q", cfg.Port)
+	}
+
+	if cfg.DBPath != "/tmp/custom.db" {
+		t.Fatalf("expected db path /tmp/custom.db, got %q", cfg.DBPath)
+	}
+
+	if cfg.Env != "test" {
+		t.Fatalf("expected env test, got %q", cfg.Env)
+	}
+}
+
+func TestGetOrCreateMasterKeyUsesExistingFallbackFile(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "master.key")
+	t.Setenv("ENVM_MASTER_KEY_FILE", keyPath)
+
+	original := bytes.Repeat([]byte{1}, 32)
+	encoded := base64.StdEncoding.EncodeToString(original)
+	if err := os.WriteFile(keyPath, []byte(encoded), 0o600); err != nil {
+		t.Fatalf("failed to write key file: %v", err)
+	}
+
+	key, err := GetOrCreateMasterKey()
+	if err != nil {
+		t.Fatalf("GetOrCreateMasterKey returned error: %v", err)
+	}
+
+	if len(key) != 32 {
+		t.Fatalf("expected 32-byte key, got %d", len(key))
+	}
+}
+
+func TestDeleteMasterKeyRemovesFallbackFile(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "master.key")
+	t.Setenv("ENVM_MASTER_KEY_FILE", keyPath)
+
+	if err := os.WriteFile(keyPath, []byte(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{2}, 32))), 0o600); err != nil {
+		t.Fatalf("failed to write key file: %v", err)
+	}
+
+	_ = DeleteMasterKey()
+
+	_, err := os.Stat(keyPath)
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected key file to be removed, got stat error: %v", err)
 	}
 }

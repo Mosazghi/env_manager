@@ -9,84 +9,30 @@ This project is under active development and not yet ready for production use.
 
 ---
 
-# Installation
+## Installation
 
-## 1. Run the Server
+### 1. Run the Server
 
-Download the latest binary for your platform from the [releases page](#) and run it:
+Download the latest binary for your platform from the [releases page](https://github.com/Mosazghi/env_manager/releases).
+
+### 2. Enable HTTPS (recommended)
+
+See [configure_caddy.md](configure_caddy.md) for instructions on setting up Caddy to enable HTTPS with automatic TLS certificates. This is highly recommended if you plan to access the env manager remotely.
+
+## Usage
+
+### Env Manager Server
+
+Firstly the env manager server needs to be running. You can start it with:
 
 ```bash
-./envm-server
+./envm-server service install 
 ```
+This will setup the server as a system service and start it immediately. The server listens on port `8080` by default.
 
-The server listens on `http://127.0.0.1:8080` by default.
+If it doesn't start, you can check the logs with:
 
----
-
-## 2. Enable HTTPS (recommended)
-
-> HTTPS is handled by [Caddy](https://caddyserver.com/), a reverse proxy that automatically obtains and renews TLS certificates via Let's Encrypt.
-
-### Install Caddy
-
-Naigate to the [Caddy download page](https://caddyserver.com/download) and follow the instructions for your platform to install Caddy.
-
----
-
-### Configure Caddy
-
-**Linux/macOS** — edit `/etc/caddy/Caddyfile`:
 ```bash
-sudo nano /etc/caddy/Caddyfile
+./envm-server service start OR ./envm-server service restart
 ```
-
-**Windows** — edit `C:\ProgramData\Caddy\Caddyfile`
-
-Paste this, replacing with your domain:
-
-```
-your-domain.com {
-    reverse_proxy 127.0.0.1:8080
-}
-```
-
-
-
----
-
-### Start Caddy
-
-
-### Prerequisites
-
-Before starting Caddy, make sure:
-
-- Your domain's DNS A record points to this machine's public IP
-- Ports **80** and **443** are open and forwarded to this machine on your router
-- `envm-server` is already running on port `8080`
-
---- 
-
-**Linux :**
-```bash
-sudo systemctl enable --now caddy
-```
-
-**macOS:**
-```bash
-brew services start caddy
-```
-
-**Windows:**
-```powershell
-caddy start
-```
-
-Once Caddy starts it will automatically obtain a TLS certificate, no manual certificate management needed.
-
-
-You should be able to access the env manager securely at `https://your-domain.com` now!
-
-# Usage 
-
 TODO

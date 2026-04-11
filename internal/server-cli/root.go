@@ -92,7 +92,7 @@ var tokenCreateCmd = &cobra.Command{
 }
 
 var serverExecCmd = &cobra.Command{
-	Use:   "exec",
+	Use:   "service",
 	Short: "Start the env-manager server",
 	RunE: func(servercli *cobra.Command, args []string) error {
 		svcConfig := &service.Config{
@@ -116,7 +116,7 @@ var serverExecCmd = &cobra.Command{
 		if len(args) > 0 {
 			action := args[0]
 			if err := service.Control(s, action); err != nil {
-				log.Fatalf("Valid actions: %q\nError: %v", service.ControlAction, err)
+				fmt.Printf("valid actions for 'service' are: %q\n\n", service.ControlAction)
 			}
 			return nil
 		}
