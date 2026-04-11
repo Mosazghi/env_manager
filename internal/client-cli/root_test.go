@@ -17,7 +17,7 @@ func TestLoadClientConfig(t *testing.T) {
 		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	if err := loadClientConfig(configPath); err != nil {
+	if err := loadLocalClientConfig(configPath); err != nil {
 		t.Fatalf("loadClientConfig returned error: %v", err)
 	}
 
@@ -35,7 +35,7 @@ func TestLoadClientConfig(t *testing.T) {
 }
 
 func TestLoadClientConfigMissingFile(t *testing.T) {
-	err := loadClientConfig(filepath.Join(t.TempDir(), "missing.config"))
+	err := loadLocalClientConfig(filepath.Join(t.TempDir(), "missing.config"))
 	if err == nil {
 		t.Fatal("expected error when config file is missing")
 	}
