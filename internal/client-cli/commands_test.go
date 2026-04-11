@@ -76,7 +76,7 @@ func TestEnvVarCreateAndLoadCommandsRunE(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rootCmd.SetArgs([]string{"--token", "token-123", "--server-url", server.URL, "--project-id", "1", "env-vars", "create", "API_KEY", "secret"})
+	rootCmd.SetArgs([]string{"--token", "token-123", "--server-url", server.URL, "--project-id", "1", "env-vars", "create", "--key", "API_KEY", "--value", "secret"})
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("env-vars create returned error: %v", err)
 	}

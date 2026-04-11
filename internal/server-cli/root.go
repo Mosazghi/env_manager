@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 	Use:           "envm-server",
 	Short:         "env-manager Server CLI",
 	SilenceErrors: true,
-	SilenceUsage:  true,
+	SilenceUsage:  false,
 }
 
 func Execute() {
@@ -36,7 +36,7 @@ var tokenCmd = &cobra.Command{
 }
 
 var tokenCreateCmd = &cobra.Command{
-	Use:   "create [expires-in]",
+	Use:   "create",
 	Short: "Create a new API token",
 	Args:  cobra.NoArgs,
 	RunE: func(servercli *cobra.Command, args []string) error {

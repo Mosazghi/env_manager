@@ -24,23 +24,28 @@ func (c *Client) do(method, path string, body any) ([]byte, error) {
 		b, _ := json.Marshal(body)
 		bodyReader = bytes.NewReader(b)
 	}
-	url := fmt.Sprintf("%v/api%v", c.baseURL, path)
-	req, err := http.NewRequest(method, url, bodyReader)
+	apiPath := fmt.Sprintf("%v/api%v", c.baseURL, path)
+
+	if !isValidPath(apiPath) {
+		return nil, fmt.Errorf("invalid path: %v", apiPath)
+	}
+
+	req, err := http.NewRequest(method, apiPath, bodyReader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	parsedBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("couldnt parse response body")
+		return nil, fmt.Errorf("couldnt parse response body: %w", err)
 	}
 
 	if resp.StatusCode >= 400 {

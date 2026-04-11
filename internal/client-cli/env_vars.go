@@ -20,16 +20,40 @@ var envVarsCmd = &cobra.Command{
 }
 
 var createEnvVarCmd = &cobra.Command{
-	Use:   "create [key] [value]",
+	Use:   "create",
 	Short: "Create a new environment variable",
-	Args:  cobra.ExactArgs(2),
-	RunE: func(clientcli *cobra.Command, args []string) error {
-		baseURL, _ := rootCmd.Flags().GetString("server-url")
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		baseURL, err := rootCmd.Flags().GetString("server-url")
+		if err != nil {
+			return fmt.Errorf("failed to get server URL: %w", err)
+		}
 		client := api.NewClient(token, baseURL)
+
+		key, err := cmd.Flags().GetString("key")
+		if err != nil {
+			return fmt.Errorf("failed to get key: %w", err)
+		}
+		value, err := cmd.Flags().GetString("value")
+		if err != nil {
+			return fmt.Errorf("failed to get value: %w", err)
+		}
+		pID, err := cmd.Flags().GetString("project-id")
+		if err != nil {
+			return fmt.Errorf("failed to get project ID: %w", err)
+		}
+		pIDInt, err := strconv.Atoi(pID)
+
+		if err != nil {
+			return fmt.Errorf("project ID conversion failed")
+		}
+
 		var body models.CreateEnvVarRequest
-		body.Key = args[0]
-		body.Value = args[1]
-		_, err := client.Post("/env-vars", body)
+		body.ProjectID = pIDInt
+		body.Key = key
+		body.Value = value
+
+		_, err = client.Post("/env-vars", body)
 		if err != nil {
 			return err
 		}
@@ -229,6 +253,10 @@ func generateStars(str string) string {
 func init() {
 	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates")
 	syncEnvVarsCmd.Flags().StringP("file-path", "p", ".env", "filepath to .env")
+	createEnvVarCmd.Flags().StringP("key", "k", "", "env var key")
+	createEnvVarCmd.Flags().StringP("value", "v", "", "env var value")
+	_ = createEnvVarCmd.MarkFlagRequired("key")
+	_ = createEnvVarCmd.MarkFlagRequired("value")
 	envVarsCmd.AddCommand(createEnvVarCmd, loadEnvsForProjectCmd, syncEnvVarsCmd)
 	rootCmd.AddCommand(envVarsCmd)
 }
