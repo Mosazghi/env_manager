@@ -1,9 +1,6 @@
 package servercli
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
