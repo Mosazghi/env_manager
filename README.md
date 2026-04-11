@@ -1,3 +1,5 @@
+[![Go Tests](https://github.com/Mosazghi/env_manager/actions/workflows/test.yml/badge.svg)](https://github.com/Mosazghi/env_manager/actions/workflows/test.yml) [![Latest Release](https://img.shields.io/github/v/release/Mosazghi/env_manager?display_name=tag)](https://github.com/Mosazghi/env_manager/releases/latest)
+
 # env_manager
 
 Are you tired of juggling multiple `.env` files across different projects and devices? Do you wish there was a secure, centralized way to manage your environment variables without relying on third-party services?
