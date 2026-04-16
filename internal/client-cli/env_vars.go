@@ -126,7 +126,7 @@ var syncEnvVarsCmd = &cobra.Command{
 			variable := strings.Split(line, "=")
 			key := variable[0]
 			val := variable[1]
-			if key != "" && val != "" {
+			if key != "" && !strings.HasPrefix(key, "#") && val != "" {
 				localEnvVars[key] = val
 			}
 		}

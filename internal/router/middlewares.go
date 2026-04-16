@@ -25,6 +25,11 @@ func AuthRequired(tokenRepo *repository.TokenRepository) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
+		if len(tokenString) < 8 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
 		validTokens, err := (*tokenRepo).FindAllValid(tokenString[:8])
 
 		if err != nil {
