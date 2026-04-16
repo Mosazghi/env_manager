@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -43,7 +44,6 @@ var createEnvVarCmd = &cobra.Command{
 			return fmt.Errorf("failed to get project ID: %w", err)
 		}
 		pIDInt, err := strconv.Atoi(pID)
-
 		if err != nil {
 			return fmt.Errorf("project ID conversion failed")
 		}
@@ -92,6 +92,51 @@ var loadEnvsForProjectCmd = &cobra.Command{
 			if _, err := fmt.Fprintf(f, "%s=%s\n", env.Key, env.Value); err != nil {
 				fmt.Printf("warning: failed to write key '%v' to file", env.Key)
 			}
+		}
+
+		return nil
+	},
+}
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Fetch env vars and run a subcommand",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		baseURL, _ := rootCmd.Flags().GetString("server-url")
+		client := api.NewClient(token, baseURL)
+		projectID, _ := rootCmd.Flags().GetString("project-id")
+		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		if err != nil {
+			return err
+		}
+
+		var resp struct {
+			Data []models.EnvVar `json:"data"`
+		}
+		if err := json.Unmarshal(data, &resp); err != nil {
+			return err
+		}
+		dashIndex := cmd.ArgsLenAtDash()
+		if dashIndex == -1 || dashIndex >= len(args) {
+			return fmt.Errorf("no command provided after --")
+		}
+
+		commandToRun := args[dashIndex:]
+		executable := commandToRun[0]
+		remainingArgs := commandToRun[1:]
+		execCmd := exec.Command(executable, remainingArgs...)
+		newEnv := os.Environ()
+
+		for _, env := range resp.Data {
+			newEnv = append(newEnv, fmt.Sprintf("%v=%v", env.Key, env.Value))
+		}
+		execCmd.Env = newEnv
+		execCmd.Stdin = os.Stdin
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
+		fmt.Println("running cmd: ", commandToRun)
+		if err := execCmd.Run(); err != nil {
+			return fmt.Errorf("error running %v: %w", executable, err)
 		}
 
 		return nil
@@ -257,6 +302,6 @@ func init() {
 	createEnvVarCmd.Flags().StringP("value", "v", "", "env var value")
 	_ = createEnvVarCmd.MarkFlagRequired("key")
 	_ = createEnvVarCmd.MarkFlagRequired("value")
-	envVarsCmd.AddCommand(createEnvVarCmd, loadEnvsForProjectCmd, syncEnvVarsCmd)
+	envVarsCmd.AddCommand(createEnvVarCmd, loadEnvsForProjectCmd, syncEnvVarsCmd, runCmd)
 	rootCmd.AddCommand(envVarsCmd)
 }
