@@ -9,6 +9,32 @@ import (
 	"testing"
 )
 
+func TestHelperProcessEnvVarsRun(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+
+	dashIndex := -1
+	for i, arg := range os.Args {
+		if arg == "--" {
+			dashIndex = i
+			break
+		}
+	}
+
+	if dashIndex == -1 || dashIndex+2 >= len(os.Args) {
+		os.Exit(2)
+	}
+
+	key := os.Args[dashIndex+1]
+	expectedValue := os.Args[dashIndex+2]
+	if os.Getenv(key) != expectedValue {
+		os.Exit(3)
+	}
+
+	os.Exit(0)
+}
+
 func TestProjectCommandsRunE(t *testing.T) {
 	listCalled := false
 	createCalled := false
@@ -138,6 +164,70 @@ func TestEnvVarSyncCommandRunEForceUpdate(t *testing.T) {
 
 	if !getCalled || !postCalled || !putCalled {
 		t.Fatalf("expected GET/POST/PUT calls, got get=%v post=%v put=%v", getCalled, postCalled, putCalled)
+	}
+}
+
+func TestEnvVarRunCommandRunE(t *testing.T) {
+	t.Setenv("GO_WANT_HELPER_PROCESS", "1")
+
+	runCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/api/projects/1/env-vars":
+			runCalled = true
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"data":[{"key":"RUN_API_KEY","value":"secret-value"}]}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	rootCmd.SetArgs([]string{
+		"--token", "token-123",
+		"--server-url", server.URL,
+		"--project-id", "1",
+		"env-vars", "run", "--",
+		os.Args[0],
+		"-test.run=TestHelperProcessEnvVarsRun",
+		"--", "RUN_API_KEY", "secret-value",
+	})
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("env-vars run returned error: %v", err)
+	}
+
+	if !runCalled {
+		t.Fatalf("expected run endpoint to be called")
+	}
+}
+
+func TestEnvVarRunCommandRunENoCommandAfterDash(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/api/projects/1/env-vars":
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"data":[{"key":"RUN_API_KEY","value":"secret-value"}]}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	rootCmd.SetArgs([]string{
+		"--token", "token-123",
+		"--server-url", server.URL,
+		"--project-id", "1",
+		"env-vars", "run",
+	})
+
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Fatalf("expected error when no command is passed after --")
+	}
+
+	if !strings.Contains(err.Error(), "no command provided after --") {
+		t.Fatalf("expected no-command-after-dash error, got %v", err)
 	}
 }
 
