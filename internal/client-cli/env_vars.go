@@ -1,7 +1,6 @@
 package clientcli
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -81,16 +80,19 @@ var loadEnvsForProjectCmd = &cobra.Command{
 			return err
 		}
 
-		f, err := os.OpenFile(".env", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %v", err)
-		}
+		localEnvVars, _ := getLocalEnvVars(".env")
 
+		f, err := os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			return fmt.Errorf("error opening file: %w", err)
+		}
 		defer f.Close()
 
 		for _, env := range resp.Data {
-			if _, err := fmt.Fprintf(f, "%s=%s\n", env.Key, env.Value); err != nil {
-				fmt.Printf("warning: failed to write key '%v' to file", env.Key)
+			if _, exists := localEnvVars[env.Key]; !exists {
+				if _, err := fmt.Fprintf(f, "%s=%s\n", env.Key, env.Value); err != nil {
+					fmt.Printf("warning: failed to write key '%v' to file", env.Key)
+				}
 			}
 		}
 
@@ -156,25 +158,7 @@ var syncEnvVarsCmd = &cobra.Command{
 			return err
 		}
 
-		localEnvVars := make(map[string]string)
-
-		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0o644)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %s", err)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			variable := strings.Split(line, "=")
-			key := variable[0]
-			val := variable[1]
-			if key != "" && !strings.HasPrefix(key, "#") && val != "" {
-				localEnvVars[key] = val
-			}
-		}
+		localEnvVars, _ := getLocalEnvVars(filePath)
 
 		projectID, _ := rootCmd.Flags().GetString("project-id")
 		silentMode, _ := rootCmd.Flags().GetBool("silent-mode")
@@ -252,6 +236,11 @@ var syncEnvVarsCmd = &cobra.Command{
 		}
 
 		// if it exists on remote, but not locally, then ask user if to delete or keep
+		f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			return fmt.Errorf("failed to open file %s", err)
+		}
+		defer f.Close()
 		for key, pair := range remoteEnvVars {
 			if _, exists := localEnvVars[key]; !exists {
 				var confirmation string
@@ -272,12 +261,6 @@ var syncEnvVarsCmd = &cobra.Command{
 						fmt.Printf("failed to delete env var: %s\n", err)
 					}
 				case "p":
-					f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-					if err != nil {
-						return fmt.Errorf("failed to open file %s", err)
-					}
-
-					defer f.Close()
 
 					if _, err := fmt.Fprintf(f, "%s=%s\n", key, pair.Value); err != nil {
 						return fmt.Errorf("failed to pull env var: %s", err)
@@ -296,7 +279,7 @@ func generateStars(str string) string {
 }
 
 func init() {
-	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates")
+	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates to server")
 	syncEnvVarsCmd.Flags().StringP("file-path", "p", ".env", "filepath to .env")
 	createEnvVarCmd.Flags().StringP("key", "k", "", "env var key")
 	createEnvVarCmd.Flags().StringP("value", "v", "", "env var value")
