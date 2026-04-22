@@ -5,10 +5,10 @@ import (
 )
 
 type Token struct {
-	ExpiresAt   time.Time `json:"expiresAt" gorm:"not null"`
-	CreatedAt   time.Time `json:"createdAt" gorm:"not null"`
-	HashedToken string    `json:"hashedToken" gorm:"not null"`
+	ExpiresAt   time.Time `json:"expiresAt" db:"expires_at"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+	HashedToken string    `json:"hashedToken" db:"hashed_token"`
 	// Only the 8 first chars of the token for faster lookup
-	Prefix string `json:"prefix"`
-	ID     uint   `json:"id" gorm:"primarykey"`
+	Prefix string `json:"prefix" db:"prefix"`
+	ID     uint   `json:"id" db:"id"`
 }

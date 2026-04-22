@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"database/sql"
 	"env-manager/internal/models"
+	"time"
 
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type ProjectRepository interface {
@@ -16,40 +18,90 @@ type ProjectRepository interface {
 }
 
 type projectRepository struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewProjectRepository(db *gorm.DB) ProjectRepository {
+func NewProjectRepository(db *sqlx.DB) ProjectRepository {
 	return &projectRepository{db}
 }
 
 func (r *projectRepository) FindAll() ([]models.Project, error) {
 	var projects []models.Project
-
-	result := r.db.Find(&projects)
-	return projects, result.Error
+	err := r.db.Select(&projects, `SELECT id, name, description, created_at, updated_at FROM projects ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
 }
 
 func (r *projectRepository) FindByID(id uint) (*models.Project, error) {
 	var project models.Project
-	result := r.db.First(&project, id)
-	return &project, result.Error
+	err := r.db.Get(&project, `SELECT id, name, description, created_at, updated_at FROM projects WHERE id = ? LIMIT 1`, id)
+	if err != nil {
+		return nil, err
+	}
+	return &project, nil
 }
 
 func (r *projectRepository) FindEnvVarsByID(id uint) ([]models.EnvVar, error) {
 	var envVars []models.EnvVar
-	result := r.db.Where("project_id = ?", id).Find(&envVars)
-	return envVars, result.Error
+	err := r.db.Select(&envVars, `SELECT id, project_id, key, encrypted_val, created_at, updated_at FROM env_vars WHERE project_id = ? ORDER BY id`, id)
+	if err != nil {
+		return nil, err
+	}
+	return envVars, nil
 }
 
 func (r *projectRepository) Create(project *models.Project) error {
-	return r.db.Create(project).Error
+	now := time.Now().UTC()
+	result, err := r.db.Exec(
+		`INSERT INTO projects (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)`,
+		project.Name,
+		project.Description,
+		time.Now(),
+		time.Now(),
+	)
+	if err != nil {
+		return err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	project.ID = uint(id)
+	project.CreatedAt = now.Local()
+	project.UpdatedAt = now.Local()
+	return nil
 }
 
 func (r *projectRepository) Update(project *models.Project) error {
-	return r.db.Save(project).Error
+	now := time.Now().UTC()
+	result, err := r.db.Exec(
+		`UPDATE projects SET name = ?, description = ?, updated_at = ? WHERE id = ?`,
+		project.Name,
+		project.Description,
+		time.Now(),
+		project.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+
+	project.UpdatedAt = now.Local()
+	return nil
 }
 
 func (r *projectRepository) Delete(id uint) error {
-	return r.db.Delete(&models.Project{}, id).Error
+	_, err := r.db.Exec(`DELETE FROM projects WHERE id = ?`, id)
+	return err
 }

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"env-manager/internal/database"
-	"env-manager/internal/models"
 )
 
 func TestProgramStartAndStop(t *testing.T) {
@@ -56,7 +55,7 @@ func TestTokenCreateCommandRunE(t *testing.T) {
 	}
 
 	var count int64
-	if err := db.Model(&models.Token{}).Count(&count).Error; err != nil {
+	if err := db.QueryRow(`SELECT COUNT(*) FROM tokens`).Scan(&count); err != nil {
 		t.Fatalf("failed counting tokens: %v", err)
 	}
 

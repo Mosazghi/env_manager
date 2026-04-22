@@ -60,13 +60,7 @@ var tokenCreateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-
-		c, err := db.DB()
-		if err != nil {
-			return fmt.Errorf("failed to get raw DB connection: %w", err)
-		}
-
-		defer c.Close()
+		defer db.Close()
 		tokenRepo := repository.NewTokenRepository(db)
 
 		var token models.Token
