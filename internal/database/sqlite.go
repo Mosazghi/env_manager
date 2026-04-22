@@ -1,29 +1,43 @@
 package database
 
 import (
+	"embed"
 	"os"
 	"path/filepath"
 
-	"env-manager/internal/models"
-
-	"github.com/glebarez/sqlite" // ← GORM driver, pure Go, no CGO
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"github.com/jmoiron/sqlx"
+	"github.com/pressly/goose/v3"
+	_ "modernc.org/sqlite"
 )
 
-func NewSQLite(path string) (*gorm.DB, error) {
+const migrationsDir = "migrations"
+
+//go:embed migrations/*.sql
+var migrationFiles embed.FS
+
+func NewSQLite(path string) (*sqlx.DB, error) {
 	if err := ensureDir(path); err != nil {
 		return nil, err
 	}
 
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	db, err := sqlx.Open("sqlite", path)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := db.AutoMigrate(&models.Project{}, &models.EnvVar{}, &models.Token{}); err != nil {
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
+	goose.SetBaseFS(migrationFiles)
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
+	if err := goose.Up(db.DB, migrationsDir); err != nil {
+		_ = db.Close()
 		return nil, err
 	}
 

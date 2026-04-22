@@ -3,11 +3,11 @@ package models
 import "time"
 
 type Project struct {
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Name        string `json:"name" gorm:"unique;not null"`
-	Description string `json:"description" gorm:"type:text"`
-	ID          uint   `gorm:"primarykey"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
+	Name        string    `json:"name" db:"name"`
+	Description string    `json:"description" db:"description"`
+	ID          uint      `db:"id"`
 }
 
 type CreateProjectRequest struct {

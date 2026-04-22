@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"env-manager/internal/database"
-	"env-manager/internal/models"
 )
 
 func TestProgramStartAndStop(t *testing.T) {
@@ -42,6 +41,10 @@ func TestTokenCreateCommandRunE(t *testing.T) {
 		t.Fatalf("failed to set expires-in flag: %v", err)
 	}
 
+	if err := tokenCreateCmd.Flags().Set("show-for", "1ms"); err != nil {
+		t.Fatalf("failed to set show-for flag: %v", err)
+	}
+
 	if err := tokenCreateCmd.RunE(tokenCreateCmd, nil); err != nil {
 		t.Fatalf("tokenCreateCmd RunE returned error: %v", err)
 	}
@@ -52,7 +55,7 @@ func TestTokenCreateCommandRunE(t *testing.T) {
 	}
 
 	var count int64
-	if err := db.Model(&models.Token{}).Count(&count).Error; err != nil {
+	if err := db.QueryRow(`SELECT COUNT(*) FROM tokens`).Scan(&count); err != nil {
 		t.Fatalf("failed counting tokens: %v", err)
 	}
 

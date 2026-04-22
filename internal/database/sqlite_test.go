@@ -1,11 +1,12 @@
 package database
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"env-manager/internal/models"
+	"github.com/jmoiron/sqlx"
 )
 
 func TestEnsureDirCreatesPath(t *testing.T) {
@@ -27,16 +28,17 @@ func TestNewSQLiteCreatesDatabaseAndMigrates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSQLite returned error: %v", err)
 	}
+	defer db.Close()
 
-	if !db.Migrator().HasTable(&models.Project{}) {
+	if !hasTable(t, db, "projects") {
 		t.Fatal("expected project table to be migrated")
 	}
 
-	if !db.Migrator().HasTable(&models.EnvVar{}) {
+	if !hasTable(t, db, "env_vars") {
 		t.Fatal("expected env_vars table to be migrated")
 	}
 
-	if !db.Migrator().HasTable(&models.Token{}) {
+	if !hasTable(t, db, "tokens") {
 		t.Fatal("expected tokens table to be migrated")
 	}
 
@@ -50,4 +52,19 @@ func TestNewSQLiteInvalidPath(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for invalid database path")
 	}
+}
+
+func hasTable(t *testing.T, db *sqlx.DB, tableName string) bool {
+	t.Helper()
+
+	var name string
+	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name = ?`, tableName).Scan(&name)
+	if err == sql.ErrNoRows {
+		return false
+	}
+	if err != nil {
+		t.Fatalf("failed checking table existence for %s: %v", tableName, err)
+	}
+
+	return name == tableName
 }

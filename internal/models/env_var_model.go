@@ -3,14 +3,14 @@ package models
 import "time"
 
 type EnvVar struct {
-	Project      Project `json:"-"    gorm:"foreignKey:ProjectID"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Key          string `json:"key"`
-	EncryptedVal string `json:"-" gorm:"column:encrypted_val"`
-	Value        string `json:"value" gorm:"-"`
-	ID           uint   `gorm:"primarykey"`
-	ProjectID    int    `json:"project_id" gorm:"not null;index"`
+	Project      Project   `json:"-" db:"-"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
+	Key          string    `json:"key" db:"key"`
+	EncryptedVal string    `json:"-" db:"encrypted_val"`
+	Value        string    `json:"value" db:"-"`
+	ID           uint      `db:"id"`
+	ProjectID    int       `json:"project_id" db:"project_id"`
 }
 
 type CreateEnvVarRequest struct {
