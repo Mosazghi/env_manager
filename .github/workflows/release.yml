@@ -66,8 +66,8 @@ jobs:
 
           mkdir -p "$STAGE_DIR"
 
-          CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -trimpath -ldflags="-s -w" -o "${STAGE_DIR}/envm-server${EXT}" ./cmd/envm-server
-          CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -trimpath -ldflags="-s -w" -o "${STAGE_DIR}/env-client${EXT}" ./cmd/env-client
+          CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -trimpath -ldflags="-s -w" -o "${STAGE_DIR}/envms${EXT}" ./cmd/envm-server
+          CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -trimpath -ldflags="-s -w" -o "${STAGE_DIR}/envmc${EXT}" ./cmd/envm-client
 
           tar -C release -czf "release/${PACKAGE}.tar.gz" "$PACKAGE"
           rm -rf "$STAGE_DIR"

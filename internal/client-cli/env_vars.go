@@ -1,10 +1,10 @@
 package clientcli
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -20,16 +20,39 @@ var envVarsCmd = &cobra.Command{
 }
 
 var createEnvVarCmd = &cobra.Command{
-	Use:   "create [key] [value]",
+	Use:   "create",
 	Short: "Create a new environment variable",
-	Args:  cobra.ExactArgs(2),
-	RunE: func(clientcli *cobra.Command, args []string) error {
-		baseURL, _ := rootCmd.Flags().GetString("server-url")
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		baseURL, err := rootCmd.Flags().GetString("server-url")
+		if err != nil {
+			return fmt.Errorf("failed to get server URL: %w", err)
+		}
 		client := api.NewClient(token, baseURL)
+
+		key, err := cmd.Flags().GetString("key")
+		if err != nil {
+			return fmt.Errorf("failed to get key: %w", err)
+		}
+		value, err := cmd.Flags().GetString("value")
+		if err != nil {
+			return fmt.Errorf("failed to get value: %w", err)
+		}
+		pID, err := cmd.Flags().GetString("project-id")
+		if err != nil {
+			return fmt.Errorf("failed to get project ID: %w", err)
+		}
+		pIDInt, err := strconv.Atoi(pID)
+		if err != nil {
+			return fmt.Errorf("project ID conversion failed")
+		}
+
 		var body models.CreateEnvVarRequest
-		body.Key = args[0]
-		body.Value = args[1]
-		_, err := client.Post("/env-vars", body)
+		body.ProjectID = pIDInt
+		body.Key = key
+		body.Value = value
+
+		_, err = client.Post("/env-vars", body)
 		if err != nil {
 			return err
 		}
@@ -57,17 +80,65 @@ var loadEnvsForProjectCmd = &cobra.Command{
 			return err
 		}
 
-		f, err := os.OpenFile(".env", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %v", err)
-		}
+		localEnvVars, _ := getLocalEnvVars(".env")
 
+		f, err := os.OpenFile(".env", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			return fmt.Errorf("error opening file: %w", err)
+		}
 		defer f.Close()
 
 		for _, env := range resp.Data {
-			if _, err := fmt.Fprintf(f, "%s=%s\n", env.Key, env.Value); err != nil {
-				fmt.Printf("warning: failed to write key '%v' to file", env.Key)
+			if _, exists := localEnvVars[env.Key]; !exists {
+				if _, err := fmt.Fprintf(f, "%s=%s\n", env.Key, env.Value); err != nil {
+					fmt.Printf("warning: failed to write key '%v' to file", env.Key)
+				}
 			}
+		}
+
+		return nil
+	},
+}
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Fetch env vars and run a subcommand",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		baseURL, _ := rootCmd.Flags().GetString("server-url")
+		client := api.NewClient(token, baseURL)
+		projectID, _ := rootCmd.Flags().GetString("project-id")
+		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		if err != nil {
+			return err
+		}
+
+		var resp struct {
+			Data []models.EnvVar `json:"data"`
+		}
+		if err := json.Unmarshal(data, &resp); err != nil {
+			return err
+		}
+		dashIndex := cmd.ArgsLenAtDash()
+		if dashIndex == -1 || dashIndex >= len(args) {
+			return fmt.Errorf("no command provided after --")
+		}
+
+		commandToRun := args[dashIndex:]
+		executable := commandToRun[0]
+		remainingArgs := commandToRun[1:]
+		execCmd := exec.Command(executable, remainingArgs...)
+		newEnv := os.Environ()
+
+		for _, env := range resp.Data {
+			newEnv = append(newEnv, fmt.Sprintf("%v=%v", env.Key, env.Value))
+		}
+		execCmd.Env = newEnv
+		execCmd.Stdin = os.Stdin
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
+		fmt.Println("running cmd: ", commandToRun)
+		if err := execCmd.Run(); err != nil {
+			return fmt.Errorf("error running %v: %w", executable, err)
 		}
 
 		return nil
@@ -87,25 +158,7 @@ var syncEnvVarsCmd = &cobra.Command{
 			return err
 		}
 
-		localEnvVars := make(map[string]string)
-
-		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0o644)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %s", err)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			variable := strings.Split(line, "=")
-			key := variable[0]
-			val := variable[1]
-			if key != "" && val != "" {
-				localEnvVars[key] = val
-			}
-		}
+		localEnvVars, _ := getLocalEnvVars(filePath)
 
 		projectID, _ := rootCmd.Flags().GetString("project-id")
 		silentMode, _ := rootCmd.Flags().GetBool("silent-mode")
@@ -183,6 +236,11 @@ var syncEnvVarsCmd = &cobra.Command{
 		}
 
 		// if it exists on remote, but not locally, then ask user if to delete or keep
+		f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			return fmt.Errorf("failed to open file %s", err)
+		}
+		defer f.Close()
 		for key, pair := range remoteEnvVars {
 			if _, exists := localEnvVars[key]; !exists {
 				var confirmation string
@@ -203,12 +261,6 @@ var syncEnvVarsCmd = &cobra.Command{
 						fmt.Printf("failed to delete env var: %s\n", err)
 					}
 				case "p":
-					f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-					if err != nil {
-						return fmt.Errorf("failed to open file %s", err)
-					}
-
-					defer f.Close()
 
 					if _, err := fmt.Fprintf(f, "%s=%s\n", key, pair.Value); err != nil {
 						return fmt.Errorf("failed to pull env var: %s", err)
@@ -227,8 +279,12 @@ func generateStars(str string) string {
 }
 
 func init() {
-	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates")
+	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates to server")
 	syncEnvVarsCmd.Flags().StringP("file-path", "p", ".env", "filepath to .env")
-	envVarsCmd.AddCommand(createEnvVarCmd, loadEnvsForProjectCmd, syncEnvVarsCmd)
+	createEnvVarCmd.Flags().StringP("key", "k", "", "env var key")
+	createEnvVarCmd.Flags().StringP("value", "v", "", "env var value")
+	_ = createEnvVarCmd.MarkFlagRequired("key")
+	_ = createEnvVarCmd.MarkFlagRequired("value")
+	envVarsCmd.AddCommand(createEnvVarCmd, loadEnvsForProjectCmd, syncEnvVarsCmd, runCmd)
 	rootCmd.AddCommand(envVarsCmd)
 }

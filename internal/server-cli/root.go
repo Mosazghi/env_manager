@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 	Use:           "envm-server",
 	Short:         "env-manager Server CLI",
 	SilenceErrors: true,
-	SilenceUsage:  true,
+	SilenceUsage:  false,
 }
 
 func Execute() {
@@ -36,13 +36,22 @@ var tokenCmd = &cobra.Command{
 }
 
 var tokenCreateCmd = &cobra.Command{
-	Use:   "create [expires-in]",
+	Use:   "create",
 	Short: "Create a new API token",
 	Args:  cobra.NoArgs,
 	RunE: func(servercli *cobra.Command, args []string) error {
 		expiresIn, err := servercli.Flags().GetString("expires-in")
+
 		if err != nil {
 			return fmt.Errorf("invalid expires-in value: %w", err)
+		}
+		tokenDisplayTimeStr, err := servercli.Flags().GetString("show-for")
+		if err != nil {
+			return fmt.Errorf("invalid show-for value: %w", err)
+		}
+		tokenDisplayTime, err := parseDuration(tokenDisplayTimeStr)
+		if err != nil {
+			return fmt.Errorf("invalid show-for duration: %w", err)
 		}
 
 		cfg := config.Load()
@@ -51,13 +60,7 @@ var tokenCreateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-
-		c, err := db.DB()
-		if err != nil {
-			return fmt.Errorf("failed to get raw DB connection: %w", err)
-		}
-
-		defer c.Close()
+		defer db.Close()
 		tokenRepo := repository.NewTokenRepository(db)
 
 		var token models.Token
@@ -144,6 +147,7 @@ var serverExecCmd = &cobra.Command{
 
 func init() {
 	tokenCreateCmd.Flags().StringP("expires-in", "e", "1h", "Duration until the token expires (e.g. 30m, 2h, 10d)")
+	tokenCreateCmd.Flags().StringP("show-for", "s", "10s", "Duration to show the token after creation before hiding it (e.g. 30m, 2h)")
 	tokenCmd.AddCommand(tokenCreateCmd)
 	rootCmd.AddCommand(tokenCmd, serverExecCmd)
 }

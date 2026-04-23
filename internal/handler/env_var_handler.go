@@ -7,8 +7,6 @@ import (
 
 	"env-manager/internal/models"
 	"env-manager/internal/repository"
-
-	"github.com/gin-gonic/gin"
 )
 
 type EnvVarHandlerand struct {
@@ -20,27 +18,36 @@ func NewEnvVarHandler(projectsRepo repository.ProjectRepository, envVarsRepo rep
 	return &EnvVarHandlerand{projectsRepo, envVarsRepo}
 }
 
-func (h *EnvVarHandlerand) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+func (h *EnvVarHandlerand) GetAll(w http.ResponseWriter, r *http.Request) {
+	pageRaw := r.URL.Query().Get("page")
+	if pageRaw == "" {
+		pageRaw = "1"
+	}
+	limitRaw := r.URL.Query().Get("limit")
+	if limitRaw == "" {
+		limitRaw = "10"
+	}
+
+	page, _ := strconv.Atoi(pageRaw)
+	limit, _ := strconv.Atoi(limitRaw)
 
 	envVars, _, err := h.envVarsRepo.FindAll(page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	envVars, err = DecryptEnvVars(&envVars)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, ToResponse(true, "Env vars retrieved", envVars))
+	WriteJSON(w, http.StatusOK, ToResponse(true, "Env vars retrieved", envVars))
 }
 
-func (h *EnvVarHandlerand) Create(c *gin.Context) {
+func (h *EnvVarHandlerand) Create(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateEnvVarRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := DecodeJSON(r, &req); err != nil {
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -49,63 +56,63 @@ func (h *EnvVarHandlerand) Create(c *gin.Context) {
 	// check if project exists
 	_, err := h.projectsRepo.FindByID(uint(req.ProjectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, ToResponse(false, "project not found", nil))
+		WriteJSON(w, http.StatusNotFound, ToResponse(false, "project not found", nil))
 		return
 	}
 
 	enc, err := EncryptValue(req.Value)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+		WriteJSON(w, http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
 
 	envVar.EncryptedVal = enc
 
 	if err := h.envVarsRepo.Create(envVar); err != nil {
-		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+		WriteJSON(w, http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusCreated, ToResponse(true, "Env var created", envVar))
+	WriteJSON(w, http.StatusCreated, ToResponse(true, "Env var created", envVar))
 }
 
-func (h *EnvVarHandlerand) FindByID(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+func (h *EnvVarHandlerand) FindByID(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(r.PathValue("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
+		WriteJSON(w, http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	envVar, err := h.envVarsRepo.FindByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, ToResponse(false, "env var not found", nil))
+		WriteJSON(w, http.StatusNotFound, ToResponse(false, "env var not found", nil))
 		return
 	}
 
 	dec, err := DecryptValue(envVar.EncryptedVal)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ToResponse(false, err.Error(), nil))
+		WriteJSON(w, http.StatusNotFound, ToResponse(false, err.Error(), nil))
 		return
 	}
 	envVar.Value = string(dec)
-	c.JSON(http.StatusOK, ToResponse(true, "Env var found", envVar))
+	WriteJSON(w, http.StatusOK, ToResponse(true, "Env var found", envVar))
 }
 
-func (h *EnvVarHandlerand) Update(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+func (h *EnvVarHandlerand) Update(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(r.PathValue("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
+		WriteJSON(w, http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	envVar, err := h.envVarsRepo.FindByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, ToResponse(false, "env var not found", nil))
+		WriteJSON(w, http.StatusNotFound, ToResponse(false, "env var not found", nil))
 		return
 	}
 
 	var req models.UpdateEnvVarRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ToResponse(false, err.Error(), nil))
+	if err := DecodeJSON(r, &req); err != nil {
+		WriteJSON(w, http.StatusBadRequest, ToResponse(false, err.Error(), nil))
 		return
 	}
 
@@ -115,35 +122,35 @@ func (h *EnvVarHandlerand) Update(c *gin.Context) {
 	if req.Value != "" {
 		enc, err := EncryptValue(req.Value)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+			WriteJSON(w, http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 			return
 		}
 		envVar.EncryptedVal = enc
 	}
 
 	if err := h.envVarsRepo.Update(envVar); err != nil {
-		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+		WriteJSON(w, http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusOK, ToResponse(true, "Env var updated", envVar))
+	WriteJSON(w, http.StatusOK, ToResponse(true, "Env var updated", envVar))
 }
 
-func (h *EnvVarHandlerand) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+func (h *EnvVarHandlerand) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(r.PathValue("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ToResponse(false, "invalid id", nil))
+		WriteJSON(w, http.StatusBadRequest, ToResponse(false, "invalid id", nil))
 		return
 	}
 
 	_, err = h.envVarsRepo.FindByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, ToResponse(false, fmt.Sprintf("env var with ID %v doesn't exists", id), nil))
+		WriteJSON(w, http.StatusNotFound, ToResponse(false, fmt.Sprintf("env var with ID %v doesn't exists", id), nil))
 		return
 	}
 
 	if err := h.envVarsRepo.Delete(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
+		WriteJSON(w, http.StatusInternalServerError, ToResponse(false, err.Error(), nil))
 		return
 	}
-	c.JSON(http.StatusOK, ToResponse(true, "env var deleted", nil))
+	WriteJSON(w, http.StatusOK, ToResponse(true, "env var deleted", nil))
 }

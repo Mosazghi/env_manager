@@ -28,7 +28,7 @@ See [configure_caddy.md](docs/configure_caddy.md) for instructions on setting up
 Firstly the env manager server needs to be running. You can start it with:
 
 ```bash
-./envm-server service install
+./envms service install
 ```
 
 This will setup the server as a system service and start it immediately. The server listens on port `8080` by default.
@@ -36,7 +36,7 @@ This will setup the server as a system service and start it immediately. The ser
 If it doesn't start, you can check the logs with:
 
 ```bash
-./envm-server service start OR ./envm-server service restart
+./envms service start OR ./envms service restart
 ```
 
 TODO

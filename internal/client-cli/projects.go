@@ -38,7 +38,7 @@ var fetchProjectsCmd = &cobra.Command{
 		w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
 		fmt.Fprintln(w, "ID\tName\tDescription\tCreatedAt\tUpdatedAt\t")
 		for _, p := range resp.Data {
-			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t\n", p.ID, p.Name, p.Description, p.CreatedAt.Format("2006-01-02 15:04:05"), p.UpdatedAt.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t\n", p.ID, truncateProjectName(p.Name), truncateProjectDescription(p.Description), p.CreatedAt.Format("2006-01-02 15:04:05"), p.UpdatedAt.Format("2006-01-02 15:04:05"))
 		}
 
 		w.Flush()
