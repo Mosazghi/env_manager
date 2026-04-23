@@ -109,7 +109,7 @@ func TestEnvVarCreateAndLoadCommandsRunE(t *testing.T) {
 
 	rootCmd.SetArgs([]string{"--token", "token-123", "--server-url", server.URL, "--project-id", "1", "env-vars", "load"})
 	if err := rootCmd.Execute(); err != nil {
-		t.Fatalf("env-vars load returned error: %v", err)
+		t.Fatalf("env-vars load retukned error: %v", err)
 	}
 
 	content, err := os.ReadFile(filepath.Join(tempDir, ".env"))

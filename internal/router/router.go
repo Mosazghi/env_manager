@@ -4,43 +4,31 @@ import (
 	"env-manager/internal/handler"
 	"env-manager/internal/repository"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
-func Setup(projectHandler *handler.ProjectHandler, envVarHandler *handler.EnvVarHandlerand, tokenRepo *repository.TokenRepository) *gin.Engine {
+func Setup(projectHandler *handler.ProjectHandler, envVarHandler *handler.EnvVarHandlerand, tokenRepo *repository.TokenRepository) http.Handler {
+	mux := http.NewServeMux()
 
-	r := gin.Default()
-	r.Use(AuthRequired(tokenRepo))
-
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		handler.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	// Users routes
-	v1 := r.Group("/api")
-	{
-		// Users routes
-		projects := v1.Group("/projects")
-		{
-			projects.GET("", projectHandler.GetAll)
-			projects.GET("/:id", projectHandler.GetByID)
-			projects.GET("/:id/env-vars", projectHandler.GetEnvVars)
-			projects.POST("", projectHandler.Create)
-			projects.PUT("/:id", projectHandler.Update)
-			projects.DELETE("/:id", projectHandler.Delete)
-		}
+	mux.HandleFunc("GET /api/projects", projectHandler.GetAll)
+	mux.HandleFunc("GET /api/projects/", projectHandler.GetAll)
+	mux.HandleFunc("GET /api/projects/{id}", projectHandler.GetByID)
+	mux.HandleFunc("GET /api/projects/{id}/env-vars", projectHandler.GetEnvVars)
+	mux.HandleFunc("POST /api/projects", projectHandler.Create)
+	mux.HandleFunc("POST /api/projects/", projectHandler.Create)
+	mux.HandleFunc("PUT /api/projects/{id}", projectHandler.Update)
+	mux.HandleFunc("DELETE /api/projects/{id}", projectHandler.Delete)
 
-		// Env vars routes
-		envVars := v1.Group("/env-vars")
-		{
-			envVars.GET("", envVarHandler.GetAll)
-			envVars.GET("/:id", envVarHandler.FindByID)
-			envVars.POST("", envVarHandler.Create)
-			envVars.PUT("/:id", envVarHandler.Update)
-			envVars.DELETE("/:id", envVarHandler.Delete)
-		}
-	}
+	mux.HandleFunc("GET /api/env-vars", envVarHandler.GetAll)
+	mux.HandleFunc("GET /api/env-vars/", envVarHandler.GetAll)
+	mux.HandleFunc("GET /api/env-vars/{id}", envVarHandler.FindByID)
+	mux.HandleFunc("POST /api/env-vars", envVarHandler.Create)
+	mux.HandleFunc("POST /api/env-vars/", envVarHandler.Create)
+	mux.HandleFunc("PUT /api/env-vars/{id}", envVarHandler.Update)
+	mux.HandleFunc("DELETE /api/env-vars/{id}", envVarHandler.Delete)
 
-	return r
+	return AuthRequired(tokenRepo)(mux)
 }

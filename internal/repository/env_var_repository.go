@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"database/sql"
 	"env-manager/internal/models"
+	"time"
 
-	"gorm.io/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type EnvVarRepository interface {
@@ -16,44 +18,107 @@ type EnvVarRepository interface {
 }
 
 type envVarRepository struct {
-	db *gorm.DB
+	db *sqlx.DB
 }
 
-func NewEnvVarRepository(db *gorm.DB) EnvVarRepository {
+func NewEnvVarRepository(db *sqlx.DB) EnvVarRepository {
 	return &envVarRepository{db}
 }
 
 func (r *envVarRepository) FindAll(page, limit int) ([]models.EnvVar, int64, error) {
-	var envVars []models.EnvVar
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
 	var total int64
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM env_vars`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * limit
-	r.db.Model(&models.EnvVar{}).Count(&total)
-	result := r.db.Preload("Project").Offset(offset).Limit(limit).Find(&envVars)
+	var envVars []models.EnvVar
+	err := r.db.Select(&envVars, `SELECT id, project_id, key, encrypted_val, created_at, updated_at FROM env_vars ORDER BY id LIMIT ? OFFSET ?`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
 
-	return envVars, total, result.Error
+	return envVars, total, nil
 }
 
 func (r *envVarRepository) FindByProjectID(projectID uint) ([]*models.EnvVar, error) {
 	var envVars []*models.EnvVar
-	result := r.db.Where("project_id = ?", projectID).Find(&envVars)
-	return envVars, result.Error
+	err := r.db.Select(&envVars, `SELECT id, project_id, key, encrypted_val, created_at, updated_at FROM env_vars WHERE project_id = ? ORDER BY id`, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return envVars, nil
 }
-
 func (r *envVarRepository) FindByID(id uint) (*models.EnvVar, error) {
 	var envVar models.EnvVar
-	result := r.db.First(&envVar, id)
-	return &envVar, result.Error
+	err := r.db.Get(&envVar, `SELECT id, project_id, key, encrypted_val, created_at, updated_at FROM env_vars WHERE id = ? LIMIT 1`, id)
+	if err != nil {
+		return nil, err
+	}
+	return &envVar, nil
+
 }
 
 func (r *envVarRepository) Create(envVar *models.EnvVar) error {
-	return r.db.Omit("Project").Create(envVar).Error
+	now := time.Now().UTC()
+	result, err := r.db.Exec(
+		`INSERT INTO env_vars (project_id, key, encrypted_val, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+		envVar.ProjectID,
+		envVar.Key,
+		envVar.EncryptedVal,
+		time.Now(),
+		time.Now(),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	envVar.ID = uint(id)
+	envVar.CreatedAt = now.Local()
+	envVar.UpdatedAt = now.Local()
+	return nil
 }
 
 func (r *envVarRepository) Update(envVar *models.EnvVar) error {
-	return r.db.Save(envVar).Error
+	now := time.Now().UTC()
+	result, err := r.db.Exec(
+		`UPDATE env_vars SET project_id = ?, key = ?, encrypted_val = ?, updated_at = ? WHERE id = ?`,
+		envVar.ProjectID,
+		envVar.Key,
+		envVar.EncryptedVal,
+		time.Now(),
+		envVar.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+
+	envVar.UpdatedAt = now.Local()
+	return nil
 }
 
 func (r *envVarRepository) Delete(id uint) error {
-	return r.db.Delete(&models.EnvVar{}, id).Error
+	_, err := r.db.Exec(`DELETE FROM env_vars WHERE id = ?`, id)
+	return err
 }
