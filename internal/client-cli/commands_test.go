@@ -157,7 +157,7 @@ func TestEnvVarSyncCommandRunEForceUpdate(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rootCmd.SetArgs([]string{"--token", "token-123", "--server-url", server.URL, "--project-id", "1", "env-vars", "sync", "--force", "--file-path", filePath})
+	rootCmd.SetArgs([]string{"--token", "token-123", "--server-url", server.URL, "--project-id", "1", "env-vars", "sync", "--force-update", "--file-path", filePath})
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("env-vars sync returned error: %v", err)
 	}
