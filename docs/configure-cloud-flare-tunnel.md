@@ -30,7 +30,7 @@ tunnel: <TUNNEL-UUID>
 credentials-file: /home/<user>/.cloudflared/<TUNNEL-UUID>.json
 
 ingress:
-  - hostname: <your-hostname> # (e.g. envm.mostes.no)
+  - hostname: <your-hostname> # (e.g. your.domain.com)
     service: http://localhost:8080
   - service: http_status:404
 ```
