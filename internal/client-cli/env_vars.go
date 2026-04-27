@@ -146,7 +146,7 @@ var runCmd = &cobra.Command{
 }
 
 var syncEnvVarsCmd = &cobra.Command{
-	Use:   "sync [force] [filePath]",
+	Use:   "sync",
 	Short: "Sync env variables for project",
 	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")

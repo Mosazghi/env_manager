@@ -16,10 +16,13 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "envm-client",
-	Short:         "env-manager Client CLI",
+	Use:           "envmc",
+	Short:         "Env Manager Client CLI",
 	SilenceErrors: true,
 	SilenceUsage:  false,
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	},
 }
 
 func Execute() {
@@ -63,7 +66,7 @@ func init() {
 		log.Printf("warning: failed to load .envm.config: %v", err)
 	}
 	rootCmd.PersistentFlags().StringVarP(&token, "token", "t", token, "API token")
-	rootCmd.PersistentFlags().StringVarP(&projectID, "project-id", "i", projectID, "Default Project ID")
-	rootCmd.PersistentFlags().StringVarP(&serverURL, "server-url", "u", serverURL, "Default Server URL")
-	rootCmd.PersistentFlags().BoolVarP(&silentMode, "silent-mode", "s", false, "Silent Mode")
+	rootCmd.PersistentFlags().StringVarP(&projectID, "project-id", "i", projectID, "Project ID")
+	rootCmd.PersistentFlags().StringVarP(&serverURL, "server-url", "u", serverURL, "Server URL")
+	rootCmd.PersistentFlags().BoolVarP(&silentMode, "silent-mode", "s", false, "Silent Mode - hides variables")
 }

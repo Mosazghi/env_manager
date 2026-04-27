@@ -17,10 +17,13 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "envm-server",
-	Short:         "env-manager Server CLI",
+	Use:           "envms",
+	Short:         "Env Manager Server CLI",
 	SilenceErrors: true,
 	SilenceUsage:  false,
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	},
 }
 
 func Execute() {
@@ -41,7 +44,6 @@ var tokenCreateCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(servercli *cobra.Command, args []string) error {
 		expiresIn, err := servercli.Flags().GetString("expires-in")
-
 		if err != nil {
 			return fmt.Errorf("invalid expires-in value: %w", err)
 		}
