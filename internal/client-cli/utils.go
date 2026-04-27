@@ -37,7 +37,7 @@ func getLocalEnvVars(filePath string) (map[string]string, bool) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		variable := strings.Split(line, "=")
+		variable := strings.SplitN(line, "=", 2)
 		if len(variable) != 2 {
 			continue
 		}
