@@ -68,7 +68,7 @@ var loadEnvsForProjectCmd = &cobra.Command{
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		projectID, _ := rootCmd.Flags().GetString("project-id")
-		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		data, err := client.Get("/projects/"+projectID+"/env-vars", nil)
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ var runCmd = &cobra.Command{
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		projectID, _ := rootCmd.Flags().GetString("project-id")
-		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		data, err := client.Get("/projects/"+projectID+"/env-vars", nil)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		projectID, _ := rootCmd.Flags().GetString("project-id")
 		silentMode, _ := rootCmd.Flags().GetBool("silent-mode")
-		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		data, err := client.Get("/projects/"+projectID+"/env-vars", nil)
 		if err != nil {
 			return err
 		}

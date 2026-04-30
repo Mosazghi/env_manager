@@ -333,3 +333,27 @@ func TestGetStoredValuesFromDefaultPaths(t *testing.T) {
 		t.Fatalf("expected projectID 99, got %q", pID)
 	}
 }
+
+func TestListTokensCommandRunE(t *testing.T) {
+	listCalled := false
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/api/tokens" {
+			listCalled = true
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"data":[{"id":1,"hashedToken":"abcd","createdAt":"2026-01-01T00:00:00Z","expiresAt":"2027-01-01T00:00:00Z"}]}`))
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	rootCmd.SetArgs([]string{"--token", "token-123", "--server-url", server.URL, "tokens", "list"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("tokens list returned error: %v", err)
+	}
+
+	if !listCalled {
+		t.Fatalf("expected list tokens endpoint to be called")
+	}
+}
