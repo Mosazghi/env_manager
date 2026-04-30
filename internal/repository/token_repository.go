@@ -65,13 +65,25 @@ func (r *tokenRepository) DeleteExpired() error {
 
 func (r *tokenRepository) FindAllValid(prefix string) ([]models.Token, error) {
 	var tokens []models.Token
-	err := r.db.Select(&tokens,
-		`SELECT id, prefix, hashed_token, created_at, expires_at FROM tokens WHERE prefix = ? AND expires_at > ? ORDER BY id`,
-		prefix,
-		time.Now().UTC(),
-	)
+	var err error
+
+	now := time.Now().UTC()
+
+	if prefix == "*" {
+		err = r.db.Select(&tokens,
+			`SELECT id, prefix, hashed_token, created_at, expires_at FROM tokens WHERE expires_at > ? ORDER BY id`,
+			now,
+		)
+	} else {
+		err = r.db.Select(&tokens,
+			`SELECT id, prefix, hashed_token, created_at, expires_at FROM tokens WHERE prefix = ? AND expires_at > ? ORDER BY id`,
+			prefix,
+			now,
+		)
+	}
+
 	if err != nil {
 		return nil, err
 	}
-	return tokens, err
+	return tokens, nil
 }

@@ -18,7 +18,7 @@ func NewClient(token string, baseURL string) *Client {
 	return &Client{token: token, httpClient: &http.Client{}, baseURL: baseURL}
 }
 
-func (c *Client) do(method, path string, body any) ([]byte, error) {
+func (c *Client) do(method, path string, body any, out any) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)
@@ -51,11 +51,16 @@ func (c *Client) do(method, path string, body any) ([]byte, error) {
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("error: %v", string(parsedBody))
 	}
+	if out != nil {
+		if err := json.Unmarshal(parsedBody, out); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+		}
+	}
 
 	return parsedBody, nil
 }
 
-func (c *Client) Get(path string) ([]byte, error)            { return c.do("GET", path, nil) }
-func (c *Client) Post(path string, body any) ([]byte, error) { return c.do("POST", path, body) }
-func (c *Client) Delete(path string) ([]byte, error)         { return c.do("DELETE", path, nil) }
-func (c *Client) Put(path string, body any) ([]byte, error)  { return c.do("PUT", path, body) }
+func (c *Client) Get(path string, out any) ([]byte, error)   { return c.do("GET", path, nil, out) }
+func (c *Client) Post(path string, body any) ([]byte, error) { return c.do("POST", path, body, nil) }
+func (c *Client) Delete(path string) ([]byte, error)         { return c.do("DELETE", path, nil, nil) }
+func (c *Client) Put(path string, body any) ([]byte, error)  { return c.do("PUT", path, body, nil) }

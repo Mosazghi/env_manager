@@ -29,7 +29,7 @@ func TestClientGetBuildsAPIRequest(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient("token-123", server.URL)
-	body, err := client.Get("/projects")
+	body, err := client.Get("/projects", nil)
 	if err != nil {
 		t.Fatalf("Get returned error: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestClientReturnsErrorForHTTPFailure(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient("token-123", server.URL)
-	_, err := client.Get("/projects")
+	_, err := client.Get("/projects", nil)
 	if err == nil {
 		t.Fatal("expected error for non-2xx response")
 	}
@@ -129,7 +129,7 @@ func TestClientPutAndDelete(t *testing.T) {
 
 func TestClientInvalidURLReturnsError(t *testing.T) {
 	client := NewClient("token-123", "http://bad\nurl")
-	_, err := client.Get("/projects")
+	_, err := client.Get("/projects", nil)
 	if err == nil {
 		t.Fatal("expected error for invalid URL")
 	}

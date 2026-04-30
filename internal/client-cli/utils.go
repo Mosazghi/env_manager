@@ -37,9 +37,13 @@ func getLocalEnvVars(filePath string) (map[string]string, bool) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		variable := strings.Split(line, "=")
+		variable := strings.SplitN(line, "=", 2)
+		if len(variable) != 2 {
+			continue
+		}
 		key := variable[0]
 		val := variable[1]
+
 		isValid := key != "" && !strings.HasPrefix(key, "#") && val != ""
 		if isValid {
 			envVars[key] = val

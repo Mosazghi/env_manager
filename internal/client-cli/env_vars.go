@@ -68,7 +68,7 @@ var loadEnvsForProjectCmd = &cobra.Command{
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		projectID, _ := rootCmd.Flags().GetString("project-id")
-		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		data, err := client.Get("/projects/"+projectID+"/env-vars", nil)
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ var runCmd = &cobra.Command{
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
 		projectID, _ := rootCmd.Flags().GetString("project-id")
-		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		data, err := client.Get("/projects/"+projectID+"/env-vars", nil)
 		if err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ var runCmd = &cobra.Command{
 }
 
 var syncEnvVarsCmd = &cobra.Command{
-	Use:   "sync [force] [filePath]",
+	Use:   "sync",
 	Short: "Sync env variables for project",
 	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
@@ -162,7 +162,7 @@ var syncEnvVarsCmd = &cobra.Command{
 
 		projectID, _ := rootCmd.Flags().GetString("project-id")
 		silentMode, _ := rootCmd.Flags().GetBool("silent-mode")
-		data, err := client.Get("/projects/" + projectID + "/env-vars")
+		data, err := client.Get("/projects/"+projectID+"/env-vars", nil)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ var syncEnvVarsCmd = &cobra.Command{
 				if _, err := client.Post("/env-vars", models.CreateEnvVarRequest{Key: key, Value: val, ProjectID: pIDInt}); err != nil {
 					return fmt.Errorf("failed to create env var: %s", err)
 				}
-				fmt.Println("uploaded a new variable")
+				fmt.Printf("%v uploaded\n", key)
 			}
 
 			// If it exists but value is different, update it
@@ -241,8 +241,22 @@ var syncEnvVarsCmd = &cobra.Command{
 			return fmt.Errorf("failed to open file %s", err)
 		}
 		defer f.Close()
+
+		forcePull, err := clientcli.Flags().GetBool("force-pull")
+		if err != nil {
+			return err
+		}
+		forcePulledCount := 0
 		for key, pair := range remoteEnvVars {
 			if _, exists := localEnvVars[key]; !exists {
+				if forcePull {
+					if _, err := fmt.Fprintf(f, "%s=%s\n", key, pair.Value); err != nil {
+						return fmt.Errorf("failed to pull env var: %s", err)
+					}
+					forcePulledCount++
+					continue
+				}
+
 				var confirmation string
 				msg := "%v=%v doesn't exists locally. Actions: (delete=d, pull=p, nothing=N)?"
 				if silentMode {
@@ -270,6 +284,10 @@ var syncEnvVarsCmd = &cobra.Command{
 			}
 		}
 
+		if forcePull {
+			fmt.Printf("pulled %v env variables\n", forcePulledCount)
+		}
+
 		return nil
 	},
 }
@@ -279,7 +297,8 @@ func generateStars(str string) string {
 }
 
 func init() {
-	syncEnvVarsCmd.Flags().BoolP("force-update", "f", false, "force variable updates to server")
+	syncEnvVarsCmd.Flags().Bool("force-update", false, "force variable updates to server")
+	syncEnvVarsCmd.Flags().Bool("force-pull", false, "force variable pull from server")
 	syncEnvVarsCmd.Flags().StringP("file-path", "p", ".env", "filepath to .env")
 	createEnvVarCmd.Flags().StringP("key", "k", "", "env var key")
 	createEnvVarCmd.Flags().StringP("value", "v", "", "env var value")

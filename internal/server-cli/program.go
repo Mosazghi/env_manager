@@ -33,8 +33,16 @@ func (p *program) Start(s service.Service) error {
 
 	projectHandler := handler.NewProjectHandler(projectRepo)
 	envVarHandler := handler.NewEnvVarHandler(projectRepo, envVarRepo)
+	tokenHandler := handler.NewTokenHandler(tokenRepo)
 
-	router := router.Setup(projectHandler, envVarHandler, &tokenRepo)
+	routerParams := &router.Router{
+		ProjectHandler: projectHandler,
+		EnvVarHandler:  envVarHandler,
+		TokenHandler:   tokenHandler,
+		TokenRepo:      &tokenRepo,
+	}
+
+	router := router.Setup(routerParams)
 	p.srv = &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: router,

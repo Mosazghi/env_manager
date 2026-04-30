@@ -13,30 +13,43 @@ The env_manager is a self-hosted environment variable manager that allows you to
 
 ## Installation
 
-### 1. Run the Server
+### 1. Download the Env Manager server
 
 Download the latest binary for your platform from the [releases page](https://github.com/Mosazghi/env_manager/releases).
 
 ### 2. Enable HTTPS (recommended)
 
-See [configure_caddy.md](docs/configure_caddy.md) for instructions on setting up Caddy to enable HTTPS with automatic TLS certificates. This is highly recommended if you plan to access the env manager remotely.
+Enabling HTTPS is highly recommended if you plan to access the env manager remotely outside your own
+network.
+
+There's two alternatives for achieving this:
+
+1. Use [Cloudflare Tunnel](/docs/configure-cloud-flare-tunnel.md) or
+2. [by configuring Caddy](docs/configure-caddy.md)
+
+Both options are easy to setup and most importantly _FREE_ to use.
+
+See their documentation files a step-by-step guide.
 
 ## Usage
 
 ### Env Manager Server
 
-Firstly the env manager server needs to be running. You can start it with:
+Firstly the env manager server needs to be installed as _system service_ (i.e., it will be registered
+as a background app):
 
 ```bash
 ./envms service install
 ```
 
-This will setup the server as a system service and start it immediately. The server listens on port `8080` by default.
+The server listens on port `8080` by default.
 
-If it doesn't start, you can check the logs with:
+If it doesn't start by default, do:
 
 ```bash
-./envms service start OR ./envms service restart
+./envms service start
 ```
 
-TODO
+## Env Client
+
+TODO!
