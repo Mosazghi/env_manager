@@ -6,29 +6,38 @@ import (
 	"net/http"
 )
 
-func Setup(projectHandler *handler.ProjectHandler, envVarHandler *handler.EnvVarHandlerand, tokenRepo *repository.TokenRepository) http.Handler {
+type Router struct {
+	ProjectHandler *handler.ProjectHandler
+	EnvVarHandler  *handler.EnvVarHandlerand
+	TokenHandler   *handler.TokenHandler
+	TokenRepo      *repository.TokenRepository
+}
+
+func Setup(router *Router) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		handler.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	mux.HandleFunc("GET /api/projects", projectHandler.GetAll)
-	mux.HandleFunc("GET /api/projects/", projectHandler.GetAll)
-	mux.HandleFunc("GET /api/projects/{id}", projectHandler.GetByID)
-	mux.HandleFunc("GET /api/projects/{id}/env-vars", projectHandler.GetEnvVars)
-	mux.HandleFunc("POST /api/projects", projectHandler.Create)
-	mux.HandleFunc("POST /api/projects/", projectHandler.Create)
-	mux.HandleFunc("PUT /api/projects/{id}", projectHandler.Update)
-	mux.HandleFunc("DELETE /api/projects/{id}", projectHandler.Delete)
+	mux.HandleFunc("GET /api/projects", router.ProjectHandler.GetAll)
+	mux.HandleFunc("GET /api/projects/", router.ProjectHandler.GetAll)
+	mux.HandleFunc("GET /api/projects/{id}", router.ProjectHandler.GetByID)
+	mux.HandleFunc("GET /api/projects/{id}/env-vars", router.ProjectHandler.GetEnvVars)
+	mux.HandleFunc("POST /api/projects", router.ProjectHandler.Create)
+	mux.HandleFunc("POST /api/projects/", router.ProjectHandler.Create)
+	mux.HandleFunc("PUT /api/projects/{id}", router.ProjectHandler.Update)
+	mux.HandleFunc("DELETE /api/projects/{id}", router.ProjectHandler.Delete)
 
-	mux.HandleFunc("GET /api/env-vars", envVarHandler.GetAll)
-	mux.HandleFunc("GET /api/env-vars/", envVarHandler.GetAll)
-	mux.HandleFunc("GET /api/env-vars/{id}", envVarHandler.FindByID)
-	mux.HandleFunc("POST /api/env-vars", envVarHandler.Create)
-	mux.HandleFunc("POST /api/env-vars/", envVarHandler.Create)
-	mux.HandleFunc("PUT /api/env-vars/{id}", envVarHandler.Update)
-	mux.HandleFunc("DELETE /api/env-vars/{id}", envVarHandler.Delete)
+	mux.HandleFunc("GET /api/env-vars", router.EnvVarHandler.GetAll)
+	mux.HandleFunc("GET /api/env-vars/", router.EnvVarHandler.GetAll)
+	mux.HandleFunc("GET /api/env-vars/{id}", router.EnvVarHandler.FindByID)
+	mux.HandleFunc("POST /api/env-vars", router.EnvVarHandler.Create)
+	mux.HandleFunc("POST /api/env-vars/", router.EnvVarHandler.Create)
+	mux.HandleFunc("PUT /api/env-vars/{id}", router.EnvVarHandler.Update)
+	mux.HandleFunc("DELETE /api/env-vars/{id}", router.EnvVarHandler.Delete)
 
-	return AuthRequired(tokenRepo)(mux)
+	mux.HandleFunc("GET /api/tokens", router.TokenHandler.GetAll)
+
+	return AuthRequired(router.TokenRepo)(mux)
 }

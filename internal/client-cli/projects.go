@@ -23,7 +23,7 @@ var fetchProjectsCmd = &cobra.Command{
 	RunE: func(clientcli *cobra.Command, args []string) error {
 		baseURL, _ := rootCmd.Flags().GetString("server-url")
 		client := api.NewClient(token, baseURL)
-		data, err := client.Get("/projects")
+		data, err := client.Get("/projects", nil)
 		if err != nil {
 			return err
 		}

@@ -9,6 +9,6 @@ type Token struct {
 	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
 	HashedToken string    `json:"hashedToken" db:"hashed_token"`
 	// Only the 8 first chars of the token for faster lookup
-	Prefix string `json:"prefix" db:"prefix"`
+	Prefix string `json:"-" db:"prefix"`
 	ID     uint   `json:"id" db:"id"`
 }
